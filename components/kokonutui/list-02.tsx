@@ -5,95 +5,25 @@ import {
   Wallet,
   ShoppingCart,
   CreditCard,
-  type LucideIcon,
   ArrowRight,
 } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
+import { TRANSACTIONS as PORTFOLIO_TRANSACTIONS, type Transaction as PortfolioTransaction } from "@/lib/portfolio-data"
 
-interface Transaction {
-  id: string
-  title: string
-  amount: string
-  type: "incoming" | "outgoing"
-  category: string
+interface TransactionWithIcon extends PortfolioTransaction {
   icon: LucideIcon
-  timestamp: string
-  status: "completed" | "pending" | "failed"
 }
 
 interface List02Props {
-  transactions?: Transaction[]
+  transactions?: TransactionWithIcon[]
   className?: string
 }
 
-const categoryStyles = {
-  shopping: "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100",
-  food: "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100",
-  transport: "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100",
-  entertainment: "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100",
-}
-
-const TRANSACTIONS: Transaction[] = [
-  {
-    id: "1",
-    title: "Apple Store Purchase",
-    amount: "$999.00",
-    type: "outgoing",
-    category: "shopping",
-    icon: ShoppingCart,
-    timestamp: "Today, 2:45 PM",
-    status: "completed",
-  },
-  {
-    id: "2",
-    title: "Salary Deposit",
-    amount: "$4,500.00",
-    type: "incoming",
-    category: "transport",
-    icon: Wallet,
-    timestamp: "Today, 9:00 AM",
-    status: "completed",
-  },
-  {
-    id: "3",
-    title: "Netflix Subscription",
-    amount: "$15.99",
-    type: "outgoing",
-    category: "entertainment",
-    icon: CreditCard,
-    timestamp: "Yesterday",
-    status: "pending",
-  },
-  {
-    id: "4",
-    title: "Apple Store Purchase",
-    amount: "$999.00",
-    type: "outgoing",
-    category: "shopping",
-    icon: ShoppingCart,
-    timestamp: "Today, 2:45 PM",
-    status: "completed",
-  },
-  {
-    id: "5",
-    title: "Supabase Subscription",
-    amount: "$15.99",
-    type: "outgoing",
-    category: "entertainment",
-    icon: CreditCard,
-    timestamp: "Yesterday",
-    status: "pending",
-  },
-  {
-    id: "6",
-    title: "Vercel Subscription",
-    amount: "$15.99",
-    type: "outgoing",
-    category: "entertainment",
-    icon: CreditCard,
-    timestamp: "Yesterday",
-    status: "pending",
-  },
-]
+// Map portfolio transactions to include icons
+const TRANSACTIONS: TransactionWithIcon[] = PORTFOLIO_TRANSACTIONS.map((t) => ({
+  ...t,
+  icon: t.category === "shopping" ? ShoppingCart : t.type === "incoming" ? Wallet : CreditCard,
+}))
 
 export default function List02({ transactions = TRANSACTIONS, className }: List02Props) {
   return (
@@ -110,7 +40,7 @@ export default function List02({ transactions = TRANSACTIONS, className }: List0
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
             Recent Activity
-            <span className="text-xs font-normal text-zinc-600 dark:text-zinc-400 ml-1">(23 transactions)</span>
+            <span className="text-xs font-normal text-zinc-600 dark:text-zinc-400 ml-1">({transactions.length} transactions)</span>
           </h2>
           <span className="text-xs text-zinc-600 dark:text-zinc-400">This Month</span>
         </div>

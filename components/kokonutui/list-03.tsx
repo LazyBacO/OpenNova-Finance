@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils"
 import {
   Calendar,
-  type LucideIcon,
   ArrowRight,
   CheckCircle2,
   Timer,
@@ -10,23 +9,16 @@ import {
   TrendingUp,
   CreditCard,
 } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import React from "react"
+import { FINANCIAL_GOALS, type FinancialGoal } from "@/lib/portfolio-data"
 
-interface ListItem {
-  id: string
-  title: string
-  subtitle: string
+interface ListItemWithIcon extends FinancialGoal {
   icon: LucideIcon
-  iconStyle: string
-  date: string
-  time?: string
-  amount?: string
-  status: "pending" | "in-progress" | "completed"
-  progress?: number
 }
 
 interface List03Props {
-  items?: ListItem[]
+  items?: ListItemWithIcon[]
   className?: string
 }
 
@@ -54,41 +46,11 @@ const statusConfig = {
   },
 }
 
-const ITEMS: ListItem[] = [
-  {
-    id: "1",
-    title: "Emergency Fund",
-    subtitle: "3 months of expenses saved",
-    icon: PiggyBank,
-    iconStyle: "savings",
-    date: "Target: Dec 2024",
-    amount: "$15,000",
-    status: "in-progress",
-    progress: 65,
-  },
-  {
-    id: "2",
-    title: "Stock Portfolio",
-    subtitle: "Tech sector investment plan",
-    icon: TrendingUp,
-    iconStyle: "investment",
-    date: "Target: Jun 2024",
-    amount: "$50,000",
-    status: "pending",
-    progress: 30,
-  },
-  {
-    id: "3",
-    title: "Debt Repayment",
-    subtitle: "Student loan payoff plan",
-    icon: CreditCard,
-    iconStyle: "debt",
-    date: "Target: Mar 2025",
-    amount: "$25,000",
-    status: "in-progress",
-    progress: 45,
-  },
-]
+// Map financial goals to include icons
+const ITEMS: ListItemWithIcon[] = FINANCIAL_GOALS.map((goal) => ({
+  ...goal,
+  icon: goal.iconStyle === "savings" ? PiggyBank : goal.iconStyle === "investment" ? TrendingUp : CreditCard,
+}))
 
 export default function List03({ items = ITEMS, className }: List03Props) {
   return (

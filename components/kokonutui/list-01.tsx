@@ -1,13 +1,6 @@
 import { cn } from "@/lib/utils"
 import { ArrowUpRight, ArrowDownLeft, Wallet, SendHorizontal, QrCode, Plus, ArrowRight, CreditCard } from "lucide-react"
-
-interface AccountItem {
-  id: string
-  title: string
-  description?: string
-  balance: string
-  type: "savings" | "checking" | "investment" | "debt"
-}
+import { ACCOUNTS, TOTAL_BALANCE, type AccountItem } from "@/lib/portfolio-data"
 
 interface List01Props {
   totalBalance?: string
@@ -15,45 +8,7 @@ interface List01Props {
   className?: string
 }
 
-const ACCOUNTS: AccountItem[] = [
-  {
-    id: "1",
-    title: "Main Savings",
-    description: "Personal savings",
-    balance: "$8,459.45",
-    type: "savings",
-  },
-  {
-    id: "2",
-    title: "Checking Account",
-    description: "Daily expenses",
-    balance: "$2,850.00",
-    type: "checking",
-  },
-  {
-    id: "3",
-    title: "Investment Portfolio",
-    description: "Stock & ETFs",
-    balance: "$15,230.80",
-    type: "investment",
-  },
-  {
-    id: "4",
-    title: "Credit Card",
-    description: "Pending charges",
-    balance: "$1,200.00",
-    type: "debt",
-  },
-  {
-    id: "5",
-    title: "Savings Account",
-    description: "Emergency fund",
-    balance: "$3,000.00",
-    type: "savings",
-  },
-]
-
-export default function List01({ totalBalance = "$26,540.25", accounts = ACCOUNTS, className }: List01Props) {
+export default function List01({ totalBalance = TOTAL_BALANCE, accounts = ACCOUNTS, className }: List01Props) {
   return (
     <div
       className={cn(

@@ -1,25 +1,23 @@
 "use client"
 
+import React from "react"
+
 import {
   BarChart2,
   Receipt,
-  Building2,
   CreditCard,
-  Folder,
   Wallet,
-  Users2,
-  Shield,
-  MessagesSquare,
-  Video,
+  Bot,
   Settings,
   HelpCircle,
   Menu,
+  TrendingUp,
+  PiggyBank,
+  Target,
+  Home,
 } from "lucide-react"
-
-import { Home } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
-import Image from "next/image"
 
 export default function Sidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -66,32 +64,16 @@ export default function Sidebar() {
             `}
       >
         <div className="h-full flex flex-col">
-          <Link
-            href="https://kokonutui.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="h-16 px-6 flex items-center border-b border-gray-200 dark:border-[#1F1F23]"
-          >
+          <div className="h-16 px-6 flex items-center border-b border-gray-200 dark:border-[#1F1F23]">
             <div className="flex items-center gap-3">
-              <Image
-                src="https://kokonutui.com/logo.svg"
-                alt="Acme"
-                width={32}
-                height={32}
-                className="flex-shrink-0 hidden dark:block"
-              />
-              <Image
-                src="https://kokonutui.com/logo-black.svg"
-                alt="Acme"
-                width={32}
-                height={32}
-                className="flex-shrink-0 block dark:hidden"
-              />
-              <span className="text-lg font-semibold hover:cursor-pointer text-gray-900 dark:text-white">
-                KokonutUI
+              <div className="p-2 bg-zinc-900 dark:bg-zinc-100 rounded-lg">
+                <TrendingUp className="h-5 w-5 text-white dark:text-zinc-900" />
+              </div>
+              <span className="text-lg font-semibold text-gray-900 dark:text-white">
+                InvestAI
               </span>
             </div>
-          </Link>
+          </div>
 
           <div className="flex-1 overflow-y-auto py-4 px-4">
             <div className="space-y-6">
@@ -103,51 +85,45 @@ export default function Sidebar() {
                   <NavItem href="#" icon={Home}>
                     Dashboard
                   </NavItem>
+                  <NavItem href="#" icon={Bot}>
+                    AI Advisor
+                  </NavItem>
                   <NavItem href="#" icon={BarChart2}>
                     Analytics
                   </NavItem>
-                  <NavItem href="#" icon={Building2}>
-                    Organization
-                  </NavItem>
-                  <NavItem href="#" icon={Folder}>
-                    Projects
-                  </NavItem>
                 </div>
               </div>
 
               <div>
                 <div className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  Finance
+                  Portfolio
                 </div>
                 <div className="space-y-1">
                   <NavItem href="#" icon={Wallet}>
-                    Transactions
+                    Accounts
+                  </NavItem>
+                  <NavItem href="#" icon={TrendingUp}>
+                    Investments
                   </NavItem>
                   <NavItem href="#" icon={Receipt}>
-                    Invoices
-                  </NavItem>
-                  <NavItem href="#" icon={CreditCard}>
-                    Payments
+                    Transactions
                   </NavItem>
                 </div>
               </div>
 
               <div>
                 <div className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  Team
+                  Planning
                 </div>
                 <div className="space-y-1">
-                  <NavItem href="#" icon={Users2}>
-                    Members
+                  <NavItem href="#" icon={Target}>
+                    Goals
                   </NavItem>
-                  <NavItem href="#" icon={Shield}>
-                    Permissions
+                  <NavItem href="#" icon={PiggyBank}>
+                    Savings
                   </NavItem>
-                  <NavItem href="#" icon={MessagesSquare}>
-                    Chat
-                  </NavItem>
-                  <NavItem href="#" icon={Video}>
-                    Meetings
+                  <NavItem href="#" icon={CreditCard}>
+                    Budgets
                   </NavItem>
                 </div>
               </div>
@@ -176,4 +152,3 @@ export default function Sidebar() {
     </>
   )
 }
-
