@@ -82,13 +82,13 @@ export default function Sidebar() {
                   Overview
                 </div>
                 <div className="space-y-1">
-                  <NavItem href="#" icon={Home}>
+                  <NavItem href="/dashboard" icon={Home}>
                     Dashboard
                   </NavItem>
-                  <NavItem href="#" icon={Bot}>
+                  <NavItem href="#ai-advisor" icon={Bot}>
                     AI Advisor
                   </NavItem>
-                  <NavItem href="#" icon={BarChart2}>
+                  <NavItem href="#accounts" icon={BarChart2}>
                     Analytics
                   </NavItem>
                 </div>
@@ -99,13 +99,13 @@ export default function Sidebar() {
                   Portfolio
                 </div>
                 <div className="space-y-1">
-                  <NavItem href="#" icon={Wallet}>
+                  <NavItem href="#accounts" icon={Wallet}>
                     Accounts
                   </NavItem>
-                  <NavItem href="#" icon={TrendingUp}>
+                  <NavItem href="#accounts" icon={TrendingUp}>
                     Investments
                   </NavItem>
-                  <NavItem href="#" icon={Receipt}>
+                  <NavItem href="#transactions" icon={Receipt}>
                     Transactions
                   </NavItem>
                 </div>
@@ -116,13 +116,13 @@ export default function Sidebar() {
                   Planning
                 </div>
                 <div className="space-y-1">
-                  <NavItem href="#" icon={Target}>
+                  <NavItem href="#goals" icon={Target}>
                     Goals
                   </NavItem>
-                  <NavItem href="#" icon={PiggyBank}>
+                  <NavItem href="#goals" icon={PiggyBank}>
                     Savings
                   </NavItem>
-                  <NavItem href="#" icon={CreditCard}>
+                  <NavItem href="#transactions" icon={CreditCard}>
                     Budgets
                   </NavItem>
                 </div>

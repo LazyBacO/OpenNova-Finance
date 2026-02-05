@@ -6,6 +6,9 @@ import {
   ShoppingCart,
   CreditCard,
   ArrowRight,
+  TrendingUp,
+  Zap,
+  Banknote,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { TRANSACTIONS as PORTFOLIO_TRANSACTIONS, type Transaction as PortfolioTransaction } from "@/lib/portfolio-data"
@@ -19,10 +22,20 @@ interface List02Props {
   className?: string
 }
 
+// Map categories to icons
+const categoryIcons: Record<string, LucideIcon> = {
+  shopping: ShoppingCart,
+  investment: TrendingUp,
+  income: Banknote,
+  utilities: Zap,
+  debt: CreditCard,
+  default: Wallet,
+}
+
 // Map portfolio transactions to include icons
 const TRANSACTIONS: TransactionWithIcon[] = PORTFOLIO_TRANSACTIONS.map((t) => ({
   ...t,
-  icon: t.category === "shopping" ? ShoppingCart : t.type === "incoming" ? Wallet : CreditCard,
+  icon: categoryIcons[t.category] || categoryIcons.default,
 }))
 
 export default function List02({ transactions = TRANSACTIONS, className }: List02Props) {

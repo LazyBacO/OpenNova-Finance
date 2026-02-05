@@ -48,6 +48,7 @@ export default function List01({ totalBalance = TOTAL_BALANCE, accounts = ACCOUN
                     "bg-emerald-100 dark:bg-emerald-900/30": account.type === "savings",
                     "bg-blue-100 dark:bg-blue-900/30": account.type === "checking",
                     "bg-purple-100 dark:bg-purple-900/30": account.type === "investment",
+                    "bg-red-100 dark:bg-red-900/30": account.type === "debt",
                   })}
                 >
                   {account.type === "savings" && (
