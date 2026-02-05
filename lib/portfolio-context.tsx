@@ -16,6 +16,8 @@ interface PortfolioContextType {
   addAccount: (account: Omit<AccountItem, "id">) => void
   updateAccount: (id: string, account: Partial<AccountItem>) => void
   deleteAccount: (id: string) => void
+  adjustAccountBalance: (id: string, amount: number, type: "deposit" | "withdraw") => void
+  transferBetweenAccounts: (fromId: string, toId: string, amount: number) => void
 
   // Transactions
   transactions: Transaction[]
