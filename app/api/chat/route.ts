@@ -1,11 +1,51 @@
 import { streamText, convertToModelMessages } from "ai"
-import { getPortfolioSummary } from "@/lib/portfolio-data"
+import type { AccountItem, Transaction, FinancialGoal } from "@/lib/portfolio-data"
+
+interface PortfolioData {
+  accounts: AccountItem[]
+  transactions: Transaction[]
+  goals: FinancialGoal[]
+  totalBalance: string
+}
+
+function calculateSummary(accounts: AccountItem[]) {
+  const totalSavings = accounts
+    .filter((a) => a.type === "savings")
+    .reduce((sum, a) => sum + parseFloat(a.balance.replace(/[$,]/g, "")), 0)
+
+  const totalInvestments = accounts
+    .filter((a) => a.type === "investment")
+    .reduce((sum, a) => sum + parseFloat(a.balance.replace(/[$,]/g, "")), 0)
+
+  const totalDebt = accounts
+    .filter((a) => a.type === "debt")
+    .reduce((sum, a) => sum + parseFloat(a.balance.replace(/[$,]/g, "")), 0)
+
+  const totalChecking = accounts
+    .filter((a) => a.type === "checking")
+    .reduce((sum, a) => sum + parseFloat(a.balance.replace(/[$,]/g, "")), 0)
+
+  return {
+    totalSavings,
+    totalInvestments,
+    totalDebt,
+    totalChecking,
+    netWorth: totalSavings + totalInvestments + totalChecking - totalDebt,
+  }
+}
 
 export async function POST(req: Request) {
-  const { messages } = await req.json()
+  const { messages, portfolioData } = await req.json()
 
-  // Get the current portfolio data to provide context to the AI
-  const portfolio = getPortfolioSummary()
+  // Use dynamic portfolio data if provided, otherwise use defaults
+  const portfolio: PortfolioData = portfolioData || {
+    accounts: [],
+    transactions: [],
+    goals: [],
+    totalBalance: "$0.00",
+  }
+
+  const summary = calculateSummary(portfolio.accounts)
 
   const systemPrompt = `You are an expert financial advisor AI assistant integrated into the user's financial dashboard. You have access to their complete financial portfolio data and can provide personalized investment advice.
 
@@ -14,20 +54,20 @@ export async function POST(req: Request) {
 ### Total Balance: ${portfolio.totalBalance}
 
 ### Accounts:
-${portfolio.accounts.map((a) => `- ${a.title} (${a.type}): ${a.balance} - ${a.description || "N/A"}`).join("\n")}
+${portfolio.accounts.map((a: AccountItem) => `- ${a.title} (${a.type}): ${a.balance} - ${a.description || "N/A"}`).join("\n") || "No accounts found"}
 
 ### Financial Summary:
-- Total Savings: $${portfolio.summary.totalSavings.toFixed(2)}
-- Total Investments: $${portfolio.summary.totalInvestments.toFixed(2)}
-- Total Checking: $${portfolio.summary.totalChecking.toFixed(2)}
-- Total Debt: $${portfolio.summary.totalDebt.toFixed(2)}
-- Net Worth: $${portfolio.summary.netWorth.toFixed(2)}
+- Total Savings: $${summary.totalSavings.toFixed(2)}
+- Total Investments: $${summary.totalInvestments.toFixed(2)}
+- Total Checking: $${summary.totalChecking.toFixed(2)}
+- Total Debt: $${summary.totalDebt.toFixed(2)}
+- Net Worth: $${summary.netWorth.toFixed(2)}
 
 ### Recent Transactions:
-${portfolio.transactions.map((t) => `- ${t.title}: ${t.type === "incoming" ? "+" : "-"}${t.amount} (${t.status}) - ${t.timestamp}`).join("\n")}
+${portfolio.transactions.map((t: Transaction) => `- ${t.title}: ${t.type === "incoming" ? "+" : "-"}${t.amount} (${t.status}) - ${t.timestamp}`).join("\n") || "No recent transactions"}
 
 ### Financial Goals:
-${portfolio.financialGoals.map((g) => `- ${g.title}: Target ${g.amount || "N/A"}, Progress: ${g.progress || 0}%, Status: ${g.status}, ${g.date}`).join("\n")}
+${portfolio.goals.map((g: FinancialGoal) => `- ${g.title}: Target ${g.amount || "N/A"}, Progress: ${g.progress || 0}%, Status: ${g.status}, ${g.date}`).join("\n") || "No goals set"}
 
 ## Your Role:
 1. Analyze the user's portfolio and provide personalized investment advice

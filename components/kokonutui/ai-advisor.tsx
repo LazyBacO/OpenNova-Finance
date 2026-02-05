@@ -7,6 +7,7 @@ import { DefaultChatTransport } from "ai"
 import { cn } from "@/lib/utils"
 import { Bot, Send, User, Sparkles, RefreshCw, ChevronDown, ChevronUp } from "lucide-react"
 import { useRef, useEffect, useState } from "react"
+import { usePortfolio } from "@/lib/portfolio-context"
 
 interface AIAdvisorProps {
   className?: string
@@ -16,9 +17,24 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [input, setInput] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const { accounts, transactions, goals, totalBalance } = usePortfolio()
 
   const { messages, sendMessage, status, setMessages } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      prepareSendMessagesRequest: ({ id, messages }) => ({
+        body: {
+          message: messages[messages.length - 1],
+          id,
+          portfolioData: {
+            accounts,
+            transactions,
+            goals,
+            totalBalance,
+          },
+        },
+      }),
+    }),
   })
 
   const isLoading = status === "streaming" || status === "submitted"
