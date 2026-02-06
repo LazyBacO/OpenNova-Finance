@@ -15,6 +15,7 @@ import {
   PiggyBank,
   Target,
   Home,
+  Plug,
 } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
@@ -123,6 +124,9 @@ export default function Sidebar() {
                   </NavItem>
                   <NavItem href="#transactions" icon={CreditCard}>
                     Budgets
+                  </NavItem>
+                  <NavItem href="#integrations" icon={Plug}>
+                    Intégrations
                   </NavItem>
                 </div>
               </div>
