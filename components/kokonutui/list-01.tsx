@@ -26,6 +26,23 @@ export default function List01({ className }: List01Props) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<AccountItem | undefined>(undefined)
 
+  const accountTotals = accounts.reduce(
+    (totals, account) => {
+      const amount = parseFloat(account.balance.replace(/[$,]/g, "")) || 0
+      totals[account.type] += amount
+      return totals
+    },
+    {
+      savings: 0,
+      checking: 0,
+      investment: 0,
+      debt: 0,
+    }
+  )
+
+  const formatCurrency = (value: number) =>
+    `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
   const handleAddAccount = () => {
     setEditingAccount(undefined)
     setIsModalOpen(true)
@@ -65,6 +82,35 @@ export default function List01({ className }: List01Props) {
         <div className="p-4 border-b border-zinc-100 dark:border-zinc-800">
           <p className="text-xs text-zinc-600 dark:text-zinc-400">Total Balance</p>
           <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{totalBalance}</h1>
+        </div>
+
+        <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-lg border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-900/10 px-3 py-2">
+              <p className="text-[11px] text-emerald-700 dark:text-emerald-300">Savings</p>
+              <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
+                {formatCurrency(accountTotals.savings)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-blue-100 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-900/10 px-3 py-2">
+              <p className="text-[11px] text-blue-700 dark:text-blue-300">Checking</p>
+              <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                {formatCurrency(accountTotals.checking)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-purple-100 dark:border-purple-900/40 bg-purple-50 dark:bg-purple-900/10 px-3 py-2">
+              <p className="text-[11px] text-purple-700 dark:text-purple-300">Investments</p>
+              <p className="text-sm font-semibold text-purple-900 dark:text-purple-100">
+                {formatCurrency(accountTotals.investment)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-rose-100 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-900/10 px-3 py-2">
+              <p className="text-[11px] text-rose-700 dark:text-rose-300">Debt</p>
+              <p className="text-sm font-semibold text-rose-900 dark:text-rose-100">
+                {formatCurrency(accountTotals.debt)}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Accounts List */}

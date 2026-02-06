@@ -1,7 +1,10 @@
-import React from "react"
+"use client"
+
+import React, { useEffect, useState } from "react"
 import { LogOut, MoveUpRight, Settings, CreditCard, FileText } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { Switch } from "@/components/ui/switch"
 
 interface MenuItem {
   label: string
@@ -31,6 +34,28 @@ export default function Profile01({
   avatar = defaultProfile.avatar,
   subscription = defaultProfile.subscription,
 }: Partial<Profile01Props> = defaultProfile) {
+  const [apiKey, setApiKey] = useState("")
+  const [emailAlerts, setEmailAlerts] = useState(true)
+  const [pushAlerts, setPushAlerts] = useState(false)
+  const [weeklyReport, setWeeklyReport] = useState(true)
+  const [twoFactor, setTwoFactor] = useState(true)
+  const [currency, setCurrency] = useState("USD")
+  const [language, setLanguage] = useState("en")
+  const [timezone, setTimezone] = useState("GMT")
+
+  useEffect(() => {
+    const storedKey = window.localStorage.getItem("openai_api_key") || ""
+    setApiKey(storedKey)
+  }, [])
+
+  useEffect(() => {
+    if (apiKey) {
+      window.localStorage.setItem("openai_api_key", apiKey)
+    } else {
+      window.localStorage.removeItem("openai_api_key")
+    }
+  }, [apiKey])
+
   const menuItems: MenuItem[] = [
     {
       label: "Subscription",
@@ -38,11 +63,6 @@ export default function Profile01({
       href: "#",
       icon: <CreditCard className="w-4 h-4" />,
       external: false,
-    },
-    {
-      label: "Settings",
-      href: "#",
-      icon: <Settings className="w-4 h-4" />,
     },
     {
       label: "Terms & Policies",
@@ -76,7 +96,7 @@ export default function Profile01({
           </div>
           <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-6" />
           <div className="space-y-2">
-            {menuItems.map((item) => (
+            {menuItems.slice(0, 1).map((item) => (
               <Link
                 key={item.label}
                 href={item.href}
@@ -89,7 +109,111 @@ export default function Profile01({
                   <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{item.label}</span>
                 </div>
                 <div className="flex items-center">
-                  {item.value && <span className="text-sm text-zinc-500 dark:text-zinc-400 mr-2">{item.value}</span>}
+                  {item.value && (
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400 mr-2">{item.value}</span>
+                  )}
+                  {item.external && <MoveUpRight className="w-4 h-4" />}
+                </div>
+              </Link>
+            ))}
+
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 space-y-3">
+              <div className="flex items-center gap-2">
+                <Settings className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
+                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Settings</span>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm text-zinc-700 dark:text-zinc-300">
+                  <span>Email alerts</span>
+                  <Switch checked={emailAlerts} onCheckedChange={setEmailAlerts} />
+                </div>
+                <div className="flex items-center justify-between text-sm text-zinc-700 dark:text-zinc-300">
+                  <span>Push notifications</span>
+                  <Switch checked={pushAlerts} onCheckedChange={setPushAlerts} />
+                </div>
+                <div className="flex items-center justify-between text-sm text-zinc-700 dark:text-zinc-300">
+                  <span>Weekly report</span>
+                  <Switch checked={weeklyReport} onCheckedChange={setWeeklyReport} />
+                </div>
+                <div className="flex items-center justify-between text-sm text-zinc-700 dark:text-zinc-300">
+                  <span>Two-factor auth</span>
+                  <Switch checked={twoFactor} onCheckedChange={setTwoFactor} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <label className="space-y-1">
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">Currency</span>
+                  <select
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1 text-sm text-zinc-900 dark:text-zinc-100"
+                  >
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
+                  </select>
+                </label>
+                <label className="space-y-1">
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">Language</span>
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1 text-sm text-zinc-900 dark:text-zinc-100"
+                  >
+                    <option value="en">English</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                  </select>
+                </label>
+              </div>
+
+              <label className="space-y-1 text-sm">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">ChatGPT API Key</span>
+                <input
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="sk-..."
+                  className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1 text-sm text-zinc-900 dark:text-zinc-100"
+                />
+                <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  Stored locally in your browser to enable the latest ChatGPT model for finance
+                  agent responses.
+                </span>
+              </label>
+
+              <label className="space-y-1 text-sm">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">Timezone</span>
+                <select
+                  value={timezone}
+                  onChange={(e) => setTimezone(e.target.value)}
+                  className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1 text-sm text-zinc-900 dark:text-zinc-100"
+                >
+                  <option value="GMT">GMT (UTC+0)</option>
+                  <option value="CET">CET (UTC+1)</option>
+                  <option value="EST">EST (UTC-5)</option>
+                </select>
+              </label>
+            </div>
+
+            {menuItems.slice(1).map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="flex items-center justify-between p-2 
+                                    hover:bg-zinc-50 dark:hover:bg-zinc-800/50 
+                                    rounded-lg transition-colors duration-200"
+              >
+                <div className="flex items-center gap-2">
+                  {item.icon}
+                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{item.label}</span>
+                </div>
+                <div className="flex items-center">
+                  {item.value && (
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400 mr-2">{item.value}</span>
+                  )}
                   {item.external && <MoveUpRight className="w-4 h-4" />}
                 </div>
               </Link>
@@ -112,4 +236,3 @@ export default function Profile01({
     </div>
   )
 }
-
