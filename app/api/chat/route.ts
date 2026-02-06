@@ -94,7 +94,7 @@ ${portfolio.stockActions.map((a: StockAction) => `- ${a.symbol} ${a.action.toUpp
 Remember: You are their trusted financial advisor with full visibility into their finances. Provide personalized, data-driven advice.`
 
   const result = streamText({
-    model: "openai/gpt-4o",
+    model: "openai/gpt-5.2",
     system: systemPrompt,
     apiKey: apiKey || process.env.OPENAI_API_KEY,
     messages: await convertToModelMessages(messages),
