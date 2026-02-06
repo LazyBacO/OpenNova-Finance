@@ -52,6 +52,34 @@ export interface AllocationTarget {
   target: number
 }
 
+export interface DiversificationItem {
+  id: string
+  label: string
+  current: number
+  target: number
+  note?: string
+}
+
+export interface RebalancingAction {
+  id: string
+  title: string
+  description: string
+  status: "overweight" | "underweight" | "balanced"
+  impact: string
+}
+
+export interface DiversificationGroup {
+  id: string
+  title: string
+  description: string
+  items: DiversificationItem[]
+}
+
+export interface DiversificationBreakdown {
+  actions: RebalancingAction[]
+  analysis: DiversificationGroup[]
+}
+
 export interface PerformanceMetric {
   id: string
   label: string
@@ -332,6 +360,67 @@ export const ALLOCATION_TARGETS: AllocationTarget[] = [
     target: 10,
   },
 ]
+
+export const DIVERSIFICATION_BREAKDOWN: DiversificationBreakdown = {
+  actions: [
+    {
+      id: "trim-tech",
+      title: "Réduire la surpondération Tech",
+      description: "Vendre 3% d'ETF growth US pour revenir à la cible.",
+      status: "overweight",
+      impact: "-3% actions growth",
+    },
+    {
+      id: "boost-europe",
+      title: "Renforcer l'Europe",
+      description: "Acheter des ETF Europe large cap pour couvrir le déficit régional.",
+      status: "underweight",
+      impact: "+4% zone euro",
+    },
+    {
+      id: "rebalance-cash",
+      title: "Reconstituer le coussin de liquidité",
+      description: "Allouer 2% en cash pour améliorer la flexibilité.",
+      status: "underweight",
+      impact: "+2% cash",
+    },
+  ],
+  analysis: [
+    {
+      id: "sectors",
+      title: "Secteurs",
+      description: "Répartition par secteurs d'activité.",
+      items: [
+        { id: "tech", label: "Technologie", current: 32, target: 25, note: "Surpondéré" },
+        { id: "health", label: "Santé", current: 12, target: 15, note: "À renforcer" },
+        { id: "industrials", label: "Industrie", current: 10, target: 12, note: "À renforcer" },
+        { id: "consumer", label: "Consommation", current: 18, target: 18, note: "Aligné" },
+      ],
+    },
+    {
+      id: "regions",
+      title: "Zones",
+      description: "Exposition géographique globale.",
+      items: [
+        { id: "north-america", label: "Amérique du Nord", current: 58, target: 50, note: "Surpondéré" },
+        { id: "europe", label: "Europe", current: 22, target: 26, note: "À renforcer" },
+        { id: "asia", label: "Asie-Pacifique", current: 14, target: 18, note: "À renforcer" },
+        { id: "emerging", label: "Émergents", current: 6, target: 6, note: "Aligné" },
+      ],
+    },
+    {
+      id: "currencies",
+      title: "Devises",
+      description: "Répartition des expositions par devise.",
+      items: [
+        { id: "usd", label: "USD", current: 62, target: 55, note: "Surpondéré" },
+        { id: "eur", label: "EUR", current: 24, target: 28, note: "À renforcer" },
+        { id: "gbp", label: "GBP", current: 6, target: 7, note: "Légèrement bas" },
+        { id: "jpy", label: "JPY", current: 4, target: 5, note: "À renforcer" },
+      ],
+    },
+  ],
+}
 
 export const PERFORMANCE_METRICS: PerformanceMetric[] = [
   {
