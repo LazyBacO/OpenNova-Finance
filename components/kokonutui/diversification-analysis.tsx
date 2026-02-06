@@ -104,7 +104,7 @@ const summaries = [
   },
 ]
 
-export default function Integrations() {
+export default function DiversificationAnalysis() {
   return (
     <div className="fx-panel">
       <div className="p-4 border-b border-border/60">

@@ -125,7 +125,7 @@ export default function Sidebar() {
                   <NavItem href="#transactions" icon={CreditCard}>
                     Budgets
                   </NavItem>
-                  <NavItem href="#integrations" icon={Plug}>
+                  <NavItem href="#diversification" icon={Plug}>
                     Analyse diversification
                   </NavItem>
                 </div>
