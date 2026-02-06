@@ -8,6 +8,7 @@ import {
   ASSET_BREAKDOWN as DEFAULT_ASSET_BREAKDOWN,
   BUDGETS as DEFAULT_BUDGETS,
   CASHFLOW_FORECAST as DEFAULT_CASHFLOW_FORECAST,
+  DIVERSIFICATION_BREAKDOWN as DEFAULT_DIVERSIFICATION_BREAKDOWN,
   PERFORMANCE_METRICS as DEFAULT_PERFORMANCE_METRICS,
   RISK_METRICS as DEFAULT_RISK_METRICS,
   LIABILITY_BREAKDOWN as DEFAULT_LIABILITY_BREAKDOWN,
@@ -31,6 +32,7 @@ import {
   type CashflowForecastPoint,
   type AlertThreshold,
   type PlanningScenario,
+  type DiversificationBreakdown,
 } from "./portfolio-data"
 
 // LocalStorage keys for persistence
@@ -161,6 +163,7 @@ interface PortfolioContextType {
   // Allocation + KPIs
   allocationActual: AllocationActual[]
   allocationTargets: AllocationTarget[]
+  diversificationBreakdown: DiversificationBreakdown
   performanceMetrics: PerformanceMetric[]
   riskMetrics: RiskMetric[]
   netWorthHistory: NetWorthHistoryPoint[]
@@ -357,6 +360,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       deleteStockAction,
       allocationActual: DEFAULT_ALLOCATION_ACTUAL,
       allocationTargets: DEFAULT_ALLOCATION_TARGETS,
+      diversificationBreakdown: DEFAULT_DIVERSIFICATION_BREAKDOWN,
       performanceMetrics: DEFAULT_PERFORMANCE_METRICS,
       riskMetrics: DEFAULT_RISK_METRICS,
       netWorthHistory: DEFAULT_NET_WORTH_HISTORY,
