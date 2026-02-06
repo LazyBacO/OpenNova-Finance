@@ -24,7 +24,7 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
       api: "/api/chat",
       prepareSendMessagesRequest: ({ id, messages }) => ({
         body: {
-          message: messages[messages.length - 1],
+          messages,
           id,
           apiKey: window.localStorage.getItem("openai_api_key") || undefined,
           portfolioData: {
