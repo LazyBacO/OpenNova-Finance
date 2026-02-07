@@ -387,107 +387,65 @@ export default function PlanningScenarios({ className }: PlanningScenariosProps)
       </div>
 
       <div className="p-4">
-        <div className="space-y-4">
-          <div className="rounded-lg border border-border/60 bg-background/60 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-xs text-muted-foreground">Graphique principal</p>
-                <h4 className="text-sm font-semibold text-foreground">Projection de l'épargne</h4>
-              </div>
-              <div className="text-xs text-muted-foreground">Horizon: {projectionYears} ans</div>
-            </div>
-            <svg
-              width="100%"
-              height="220"
-              viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-              role="img"
-              aria-label="Projection des scénarios"
-              className="mt-3"
-            >
-              {results.map((scenario, index) => (
-                <polyline
-                  key={scenario.id}
-                  fill="none"
-                  stroke={chartColors[index % chartColors.length]}
-                  strokeWidth="2.5"
-                  points={buildSparkline(scenario.values, chartWidth, chartHeight)}
-                  opacity={scenario.id === baseline?.id ? 1 : 0.7}
-                />
-              ))}
-            </svg>
-            <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
-              {results.map((scenario, index) => (
-                <span key={`${scenario.id}-legend`} className="flex items-center gap-2">
-                  <span
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: chartColors[index % chartColors.length] }}
-                  />
-                  {scenario.label}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="overflow-hidden rounded-lg border border-border/60">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-muted/40 text-muted-foreground">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Scénario</th>
-                  <th className="px-3 py-2 font-medium">Ajustements</th>
-                  <th className="px-3 py-2 font-medium">Projection {projectionYears} ans</th>
-                  <th className="px-3 py-2 font-medium">Mini graphique</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((scenario) => {
-                  const diff = baseline ? scenario.finalValue - baseline.finalValue : 0
-                  return (
-                    <tr
-                      key={scenario.id}
-                      className="border-t border-border/60 bg-background/60 align-top"
-                    >
-                      <td className="px-3 py-3">
-                        <div className="text-sm font-semibold text-foreground">{scenario.label}</div>
-                        <p className="mt-1 text-[11px] text-muted-foreground">{scenario.description}</p>
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="space-y-1 text-[11px] text-muted-foreground">
-                          <div>Rendement: {formatPercent(scenario.rate)}</div>
-                          <div>Revenu: {formatPercent(scenario.incomeDelta * 100)}</div>
-                          <div>Marché: {formatPercent(scenario.marketShock * 100)}</div>
-                        </div>
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="text-sm font-semibold text-foreground">
-                          {formatCurrency(scenario.finalValue)}
-                        </div>
-                        <p className="mt-1 text-[11px] text-muted-foreground">
-                          Écart vs base: {formatCurrency(diff)}
-                        </p>
-                      </td>
-                      <td className="px-3 py-3">
-                        <svg
-                          width="120"
-                          height="32"
-                          viewBox="0 0 120 32"
-                          role="img"
-                          aria-label={`Projection ${scenario.label}`}
-                          className="overflow-visible"
-                        >
-                          <polyline
-                            fill="none"
-                            stroke="hsl(var(--primary))"
-                            strokeWidth="2"
-                            points={buildSparkline(scenario.values)}
-                          />
-                        </svg>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+        <div className="overflow-hidden rounded-lg border border-border/60">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-muted/40 text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2 font-medium">Scénario</th>
+                <th className="px-3 py-2 font-medium">Ajustements</th>
+                <th className="px-3 py-2 font-medium">Projection {projectionYears} ans</th>
+                <th className="px-3 py-2 font-medium">Mini graphique</th>
+              </tr>
+            </thead>
+            <tbody>
+              {results.map((scenario) => {
+                const diff = baseline ? scenario.finalValue - baseline.finalValue : 0
+                return (
+                  <tr
+                    key={scenario.id}
+                    className="border-t border-border/60 bg-background/60 align-top"
+                  >
+                    <td className="px-3 py-3">
+                      <div className="text-sm font-semibold text-foreground">{scenario.label}</div>
+                      <p className="mt-1 text-[11px] text-muted-foreground">{scenario.description}</p>
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="space-y-1 text-[11px] text-muted-foreground">
+                        <div>Rendement: {formatPercent(scenario.rate)}</div>
+                        <div>Revenu: {formatPercent(scenario.incomeDelta * 100)}</div>
+                        <div>Marché: {formatPercent(scenario.marketShock * 100)}</div>
+                      </div>
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="text-sm font-semibold text-foreground">
+                        {formatCurrency(scenario.finalValue)}
+                      </div>
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        Écart vs base: {formatCurrency(diff)}
+                      </p>
+                    </td>
+                    <td className="px-3 py-3">
+                      <svg
+                        width="120"
+                        height="32"
+                        viewBox="0 0 120 32"
+                        role="img"
+                        aria-label={`Projection ${scenario.label}`}
+                        className="overflow-visible"
+                      >
+                        <polyline
+                          fill="none"
+                          stroke="hsl(var(--primary))"
+                          strokeWidth="2"
+                          points={buildSparkline(scenario.values)}
+                        />
+                      </svg>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
         <p className="mt-3 text-[11px] text-muted-foreground">
           Hypothèse: l'épargne annuelle alimente la croissance chaque année. Les scénarios "marché" appliquent
