@@ -13,8 +13,15 @@ const formatCurrency = (value: number) =>
 
 const formatPercent = (value: number) => `${value > 0 ? "+" : ""}${value.toFixed(1)}%`
 
+const formatSignedCurrency = (value: number) => {
+  const sign = value >= 0 ? "+" : "-"
+  return `${sign}${formatCurrency(Math.abs(value))}`
+}
+
 const numberInputClasses =
   "w-full rounded-lg border border-border/60 bg-background/40 px-3 py-2 text-sm text-foreground transition-colors placeholder:text-muted-foreground/70 focus:outline-none focus:border-primary"
+
+const rangeInputClasses = "w-full accent-primary"
 
 type ProjectionResult = {
   id: string
@@ -49,6 +56,25 @@ export default function PlanningScenarios({ className }: PlanningScenariosProps)
   const [returnRate, setReturnRate] = useState(6)
 
   const projectionYears = Math.max(5, Math.min(30, 65 - age))
+  const baseScenario = planningScenarios.find((scenario) => scenario.id === "base") ?? planningScenarios[0]
+
+  const computeFinalValue = (rate: number, incomeValue: number, savingsValue: number) => {
+    if (!baseScenario) return 0
+    const adjustedRate = Math.max(rate + baseScenario.rateDelta, 0.1)
+    const adjustedIncome = incomeValue * (1 + baseScenario.incomeDelta)
+    const adjustedSavings = Math.max(savingsValue * (1 + baseScenario.incomeDelta), 0)
+
+    let balance = Math.max(savingsValue + adjustedIncome * 0.1, 0)
+    if (baseScenario.marketShock !== 0) {
+      balance *= 1 + baseScenario.marketShock
+    }
+
+    for (let year = 1; year <= projectionYears; year += 1) {
+      balance = balance * (1 + adjustedRate / 100) + adjustedSavings
+    }
+
+    return balance
+  }
 
   const results = useMemo<ProjectionResult[]>(() => {
     return planningScenarios.map((scenario) => {
@@ -81,6 +107,22 @@ export default function PlanningScenarios({ className }: PlanningScenariosProps)
   }, [planningScenarios, income, savings, returnRate, projectionYears])
 
   const baseline = results.find((scenario) => scenario.id === "base") ?? results[0]
+  const baselineFinalValue = useMemo(
+    () => computeFinalValue(returnRate, income, savings),
+    [returnRate, income, savings, projectionYears, baseScenario],
+  )
+  const returnRateDelta = useMemo(
+    () => computeFinalValue(returnRate + 1, income, savings) - baselineFinalValue,
+    [returnRate, income, savings, projectionYears, baselineFinalValue, baseScenario],
+  )
+  const incomeDelta = useMemo(
+    () => computeFinalValue(returnRate, income + 1000, savings) - baselineFinalValue,
+    [returnRate, income, savings, projectionYears, baselineFinalValue, baseScenario],
+  )
+  const savingsDelta = useMemo(
+    () => computeFinalValue(returnRate, income, savings + 1000) - baselineFinalValue,
+    [returnRate, income, savings, projectionYears, baselineFinalValue, baseScenario],
+  )
 
   return (
     <div className={cn("w-full fx-panel", className)}>
@@ -121,6 +163,19 @@ export default function PlanningScenarios({ className }: PlanningScenariosProps)
               onChange={(event) => setIncome(Number(event.target.value) || 0)}
               className={numberInputClasses}
             />
+            <p className="text-[11px] text-muted-foreground">
+              +{formatCurrency(1000)} = {formatSignedCurrency(incomeDelta)} sur {projectionYears} ans
+            </p>
+            <input
+              type="range"
+              min={20000}
+              max={200000}
+              step={1000}
+              value={income}
+              onChange={(event) => setIncome(Number(event.target.value) || 0)}
+              className={rangeInputClasses}
+            />
+            <p className="text-[11px] text-muted-foreground">Plage recommandée: 40–120k $</p>
           </label>
           <label className="space-y-2 text-xs text-muted-foreground">
             <span>Épargne annuelle</span>
@@ -132,6 +187,19 @@ export default function PlanningScenarios({ className }: PlanningScenariosProps)
               onChange={(event) => setSavings(Number(event.target.value) || 0)}
               className={numberInputClasses}
             />
+            <p className="text-[11px] text-muted-foreground">
+              +{formatCurrency(1000)} = {formatSignedCurrency(savingsDelta)} sur {projectionYears} ans
+            </p>
+            <input
+              type="range"
+              min={0}
+              max={50000}
+              step={500}
+              value={savings}
+              onChange={(event) => setSavings(Number(event.target.value) || 0)}
+              className={rangeInputClasses}
+            />
+            <p className="text-[11px] text-muted-foreground">Plage recommandée: 5–30k $</p>
           </label>
           <label className="space-y-2 text-xs text-muted-foreground">
             <span>Rendement estimé (%)</span>
@@ -144,6 +212,19 @@ export default function PlanningScenarios({ className }: PlanningScenariosProps)
               onChange={(event) => setReturnRate(Number(event.target.value) || 0)}
               className={numberInputClasses}
             />
+            <p className="text-[11px] text-muted-foreground">
+              +1% = {formatSignedCurrency(returnRateDelta)} sur {projectionYears} ans
+            </p>
+            <input
+              type="range"
+              min={0}
+              max={15}
+              step={0.1}
+              value={returnRate}
+              onChange={(event) => setReturnRate(Number(event.target.value) || 0)}
+              className={rangeInputClasses}
+            />
+            <p className="text-[11px] text-muted-foreground">Plage recommandée: 2–10%</p>
           </label>
         </div>
       </div>
