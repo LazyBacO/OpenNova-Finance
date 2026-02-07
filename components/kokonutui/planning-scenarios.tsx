@@ -25,6 +25,8 @@ type ProjectionResult = {
   marketShock: number
   values: number[]
   finalValue: number
+  rangeLow: number
+  rangeHigh: number
 }
 
 const buildSparkline = (values: number[], width = 120, height = 32) => {
@@ -47,6 +49,7 @@ export default function PlanningScenarios({ className }: PlanningScenariosProps)
   const [income, setIncome] = useState(58000)
   const [savings, setSavings] = useState(12000)
   const [returnRate, setReturnRate] = useState(6)
+  const [volatility, setVolatility] = useState(12)
 
   const projectionYears = Math.max(5, Math.min(30, 65 - age))
 
@@ -67,6 +70,10 @@ export default function PlanningScenarios({ className }: PlanningScenariosProps)
         values.push(balance)
       }
 
+      const standardDeviation = Math.max((balance * volatility) / 100, 0)
+      const rangeLow = Math.max(balance - standardDeviation, 0)
+      const rangeHigh = balance + standardDeviation
+
       return {
         id: scenario.id,
         label: scenario.label,
@@ -76,9 +83,11 @@ export default function PlanningScenarios({ className }: PlanningScenariosProps)
         marketShock: scenario.marketShock,
         values,
         finalValue: balance,
+        rangeLow,
+        rangeHigh,
       }
     })
-  }, [planningScenarios, income, savings, returnRate, projectionYears])
+  }, [planningScenarios, income, savings, returnRate, projectionYears, volatility])
 
   const baseline = results.find((scenario) => scenario.id === "base") ?? results[0]
 
@@ -99,7 +108,7 @@ export default function PlanningScenarios({ className }: PlanningScenariosProps)
           </div>
         </div>
 
-        <div className="mt-4 grid gap-4 md:grid-cols-4">
+        <div className="mt-4 grid gap-4 md:grid-cols-5">
           <label className="space-y-2 text-xs text-muted-foreground">
             <span>Âge</span>
             <input
@@ -145,6 +154,18 @@ export default function PlanningScenarios({ className }: PlanningScenariosProps)
               className={numberInputClasses}
             />
           </label>
+          <label className="space-y-2 text-xs text-muted-foreground">
+            <span>Volatilité (%)</span>
+            <input
+              type="number"
+              min={0}
+              max={50}
+              step={0.1}
+              value={volatility}
+              onChange={(event) => setVolatility(Number(event.target.value) || 0)}
+              className={numberInputClasses}
+            />
+          </label>
         </div>
       </div>
 
@@ -185,6 +206,10 @@ export default function PlanningScenarios({ className }: PlanningScenariosProps)
                       <p className="mt-1 text-[11px] text-muted-foreground">
                         Écart vs base: {formatCurrency(diff)}
                       </p>
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        Fourchette (±1σ): {formatCurrency(scenario.rangeLow)} –{" "}
+                        {formatCurrency(scenario.rangeHigh)}
+                      </p>
                     </td>
                     <td className="px-3 py-3">
                       <svg
@@ -211,7 +236,8 @@ export default function PlanningScenarios({ className }: PlanningScenariosProps)
         </div>
         <p className="mt-3 text-[11px] text-muted-foreground">
           Hypothèse: l'épargne annuelle alimente la croissance chaque année. Les scénarios "marché" appliquent
-          un choc initial sur l'épargne existante.
+          un choc initial sur l'épargne existante. La volatilité exprime un écart-type autour de la projection
+          finale.
         </p>
       </div>
     </div>
