@@ -99,52 +99,88 @@ export default function PlanningScenarios({ className }: PlanningScenariosProps)
           </div>
         </div>
 
-        <div className="mt-4 grid gap-4 md:grid-cols-4">
-          <label className="space-y-2 text-xs text-muted-foreground">
-            <span>Âge</span>
-            <input
-              type="number"
-              min={18}
-              max={70}
-              value={age}
-              onChange={(event) => setAge(Number(event.target.value) || 0)}
-              className={numberInputClasses}
-            />
-          </label>
-          <label className="space-y-2 text-xs text-muted-foreground">
-            <span>Revenu annuel</span>
-            <input
-              type="number"
-              min={0}
-              step={1000}
-              value={income}
-              onChange={(event) => setIncome(Number(event.target.value) || 0)}
-              className={numberInputClasses}
-            />
-          </label>
-          <label className="space-y-2 text-xs text-muted-foreground">
-            <span>Épargne annuelle</span>
-            <input
-              type="number"
-              min={0}
-              step={500}
-              value={savings}
-              onChange={(event) => setSavings(Number(event.target.value) || 0)}
-              className={numberInputClasses}
-            />
-          </label>
-          <label className="space-y-2 text-xs text-muted-foreground">
-            <span>Rendement estimé (%)</span>
-            <input
-              type="number"
-              min={0}
-              max={20}
-              step={0.1}
-              value={returnRate}
-              onChange={(event) => setReturnRate(Number(event.target.value) || 0)}
-              className={numberInputClasses}
-            />
-          </label>
+        <div className="mt-4 grid gap-4 lg:grid-cols-[1.3fr_0.9fr]">
+          <div className="rounded-lg border border-border/60 bg-background/50 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Profil</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Ces paramètres pilotent la durée de projection et la capacité d'épargne.
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 grid gap-4 md:grid-cols-3">
+              <label className="space-y-2 text-xs text-muted-foreground">
+                <span>Âge</span>
+                <input
+                  type="number"
+                  min={18}
+                  max={70}
+                  value={age}
+                  onChange={(event) => setAge(Number(event.target.value) || 0)}
+                  className={numberInputClasses}
+                />
+              </label>
+              <label className="space-y-2 text-xs text-muted-foreground">
+                <span>Revenu annuel</span>
+                <input
+                  type="number"
+                  min={0}
+                  step={1000}
+                  value={income}
+                  onChange={(event) => setIncome(Number(event.target.value) || 0)}
+                  className={numberInputClasses}
+                />
+              </label>
+              <label className="space-y-2 text-xs text-muted-foreground">
+                <span>Épargne annuelle</span>
+                <input
+                  type="number"
+                  min={0}
+                  step={500}
+                  value={savings}
+                  onChange={(event) => setSavings(Number(event.target.value) || 0)}
+                  className={numberInputClasses}
+                />
+              </label>
+            </div>
+          </div>
+          <div className="rounded-lg border border-border/60 bg-background/50 p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Hypothèses de marché</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Ces paramètres pilotent la croissance estimée de votre capital.
+                </p>
+              </div>
+              <span className="rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                Hypothèse clé
+              </span>
+            </div>
+            <label className="mt-3 space-y-2 text-xs text-muted-foreground">
+              <span className="flex items-center gap-2">
+                Rendement estimé (%)
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                  Prioritaire
+                </span>
+              </span>
+              <input
+                type="number"
+                min={0}
+                max={20}
+                step={0.1}
+                value={returnRate}
+                onChange={(event) => setReturnRate(Number(event.target.value) || 0)}
+                className={cn(
+                  numberInputClasses,
+                  "border-primary/60 bg-primary/5 focus:border-primary focus:ring-1 focus:ring-primary/40"
+                )}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Ajustez ce taux pour refléter votre scénario central de performance annuelle.
+              </p>
+            </label>
+          </div>
         </div>
       </div>
 
