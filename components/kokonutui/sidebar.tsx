@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useMemo, useState } from "react"
 
 import {
   BarChart2,
@@ -17,10 +17,11 @@ import {
   Home,
   Plug,
   Bell,
+  ChevronDown,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { cn } from "@/lib/utils"
 
 export default function Sidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -53,22 +54,81 @@ export default function Sidebar() {
   function NavItem({
     href,
     icon: Icon,
+    badge,
     children,
   }: {
     href: string
     icon: any
+    badge?: string
     children: React.ReactNode
   }) {
+    const isActive = pathname === href || (href.includes("#") && pathname === href.split("#")[0])
     return (
       <Link
         href={href}
         onClick={(event) => handleHashClick(event, href)}
-        className="flex items-center px-3 py-2 text-sm rounded-md transition-colors text-foreground/70 hover:text-foreground hover:bg-accent/60"
+        className={cn(
+          "flex items-center px-3 py-2 text-sm rounded-md transition-colors",
+          isActive
+            ? "bg-accent/70 text-foreground"
+            : "text-foreground/70 hover:text-foreground hover:bg-accent/60"
+        )}
       >
         <Icon className="h-4 w-4 mr-3 flex-shrink-0" />
-        {children}
+        <span className="flex-1">{children}</span>
+        {badge && (
+          <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full border border-border/60 text-muted-foreground">
+            {badge}
+          </span>
+        )}
       </Link>
     )
+  }
+
+  const sections = useMemo(
+    () => [
+      {
+        id: "overview",
+        label: "Overview",
+        items: [
+          { href: "/dashboard", icon: Home, label: "Dashboard" },
+          { href: "/dashboard#ai-advisor", icon: Bot, label: "AI Advisor" },
+          { href: "/dashboard#accounts", icon: BarChart2, label: "Accounts Overview" },
+        ],
+      },
+      {
+        id: "portfolio",
+        label: "Portfolio",
+        items: [
+          { href: "/dashboard#accounts", icon: Wallet, label: "Accounts" },
+          { href: "/dashboard#transactions", icon: Receipt, label: "Transactions" },
+          { href: "/dashboard#insights", icon: TrendingUp, label: "Insights", badge: "New" },
+          { href: "/dashboard#stock-actions", icon: TrendingUp, label: "Stock Actions" },
+        ],
+      },
+      {
+        id: "planning",
+        label: "Planning",
+        items: [
+          { href: "/dashboard#goals", icon: Target, label: "Goals" },
+          { href: "/dashboard#goals", icon: PiggyBank, label: "Savings" },
+          { href: "/dashboard#transactions", icon: CreditCard, label: "Budgets" },
+          { href: "/planning/alerts-notifications", icon: Bell, label: "Alertes & notifications" },
+          { href: "/dashboard#integrations", icon: Plug, label: "Intégrations" },
+        ],
+      },
+    ],
+    []
+  )
+
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    overview: true,
+    portfolio: true,
+    planning: true,
+  })
+
+  const toggleSection = (id: string) => {
+    setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
   return (
@@ -99,63 +159,33 @@ export default function Sidebar() {
           </div>
 
           <div className="flex-1 overflow-y-auto py-4 px-4">
-            <div className="space-y-6">
-              <div>
-                <div className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Overview
+            <div className="space-y-4">
+              {sections.map((section) => (
+                <div key={section.id} className="rounded-xl border border-border/40 bg-background/40">
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(section.id)}
+                    className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  >
+                    <span>{section.label}</span>
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 transition-transform",
+                        openSections[section.id] ? "rotate-0" : "-rotate-90"
+                      )}
+                    />
+                  </button>
+                  {openSections[section.id] && (
+                    <div className="pb-2 space-y-1">
+                      {section.items.map((item) => (
+                        <NavItem key={item.href} href={item.href} icon={item.icon} badge={item.badge}>
+                          {item.label}
+                        </NavItem>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-1">
-                  <NavItem href="/dashboard" icon={Home}>
-                    Dashboard
-                  </NavItem>
-                  <NavItem href="/dashboard#ai-advisor" icon={Bot}>
-                    AI Advisor
-                  </NavItem>
-                  <NavItem href="/dashboard#accounts" icon={BarChart2}>
-                    Accounts Overview
-                  </NavItem>
-                </div>
-              </div>
-
-              <div>
-                <div className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Portfolio
-                </div>
-                <div className="space-y-1">
-                  <NavItem href="/dashboard#accounts" icon={Wallet}>
-                    Accounts
-                  </NavItem>
-                  <NavItem href="/dashboard#stock-actions" icon={TrendingUp}>
-                    Stock Actions
-                  </NavItem>
-                  <NavItem href="/dashboard#transactions" icon={Receipt}>
-                    Transactions
-                  </NavItem>
-                </div>
-              </div>
-
-              <div>
-                <div className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Planning
-                </div>
-                <div className="space-y-1">
-                  <NavItem href="/dashboard#goals" icon={Target}>
-                    Goals
-                  </NavItem>
-                  <NavItem href="/dashboard#goals" icon={PiggyBank}>
-                    Savings
-                  </NavItem>
-                  <NavItem href="/dashboard#transactions" icon={CreditCard}>
-                    Budgets
-                  </NavItem>
-                  <NavItem href="/planning/alerts-notifications" icon={Bell}>
-                    Alertes &amp; notifications
-                  </NavItem>
-                  <NavItem href="/dashboard#integrations" icon={Plug}>
-                    Intégrations
-                  </NavItem>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
