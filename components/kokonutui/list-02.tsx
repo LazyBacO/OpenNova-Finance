@@ -99,7 +99,7 @@ export default function List02({ className }: List02Props) {
               </span>
             </h2>
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 rounded-full border border-border/60 bg-background/40 p-0.5">
+              <div className="flex items-center gap-1 rounded-full border border-border/60 bg-background/60 p-0.5 shadow-sm">
                 {(
                   [
                     { key: "all", label: "All" },
@@ -143,6 +143,9 @@ export default function List02({ className }: List02Props) {
                     "p-2 rounded-lg",
                     "hover:bg-accent/60",
                     "transition-all duration-200",
+                    "hover:-translate-y-0.5 hover:shadow-sm",
+                    "active:translate-y-0",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
                     "cursor-pointer"
                   )}
                   onClick={() => handleEditTransaction(transaction)}
@@ -153,8 +156,9 @@ export default function List02({ className }: List02Props) {
                   <div
                     className={cn(
                       "p-2 rounded-lg",
-                      "bg-background/40",
-                      "border border-border/60"
+                      "bg-background/60",
+                      "border border-border/60",
+                      "shadow-[0_1px_0_rgba(255,255,255,0.05)]"
                     )}
                   >
                     <Icon className="w-4 h-4 text-foreground" />
