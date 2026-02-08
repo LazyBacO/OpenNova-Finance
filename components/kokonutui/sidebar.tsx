@@ -18,13 +18,35 @@ import {
   Plug,
 } from "lucide-react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useState } from "react"
 
 export default function Sidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const pathname = usePathname()
 
   function handleNavigation() {
     setIsMobileMenuOpen(false)
+  }
+
+  function handleHashClick(event: React.MouseEvent<HTMLAnchorElement>, href: string) {
+    if (!href.includes("#")) {
+      handleNavigation()
+      return
+    }
+
+    const [targetPath, hash] = href.split("#")
+    if (targetPath && targetPath !== pathname) {
+      handleNavigation()
+      return
+    }
+
+    event.preventDefault()
+    handleNavigation()
+
+    if (hash) {
+      window.location.hash = hash
+    }
   }
 
   function NavItem({
@@ -39,7 +61,7 @@ export default function Sidebar() {
     return (
       <Link
         href={href}
-        onClick={handleNavigation}
+        onClick={(event) => handleHashClick(event, href)}
         className="flex items-center px-3 py-2 text-sm rounded-md transition-colors text-foreground/70 hover:text-foreground hover:bg-accent/60"
       >
         <Icon className="h-4 w-4 mr-3 flex-shrink-0" />
