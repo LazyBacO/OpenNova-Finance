@@ -4,9 +4,9 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/OpenNova-Finance/OpenNova-Finance.git"
+    "url": "https://github.com/LazyBacO/Quantum-Finance-Dashboard.git"
   },
-  "homepage": "https://github.com/OpenNova-Finance/OpenNova-Finance",
+  "homepage": "https://github.com/LazyBacO/Quantum-Finance-Dashboard",
   "scripts": {
     "build": "next build",
     "dev": "next dev",
