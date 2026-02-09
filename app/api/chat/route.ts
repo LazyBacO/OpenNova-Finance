@@ -79,6 +79,79 @@ const portfolioSchema = z.object({
   totalBalance: z.string().min(1).max(40),
 })
 
+const allocationVectorSchema = z.object({
+  equities: z.number().min(0).max(100),
+  bonds: z.number().min(0).max(100),
+  cash: z.number().min(0).max(100),
+  alternatives: z.number().min(0).max(100),
+})
+
+const growthToolkitSchema = z.object({
+  version: z.literal(1),
+  riskProfile: z.enum(["conservative", "balanced", "growth", "aggressive"]),
+  horizonYears: z.number().int().min(3).max(50),
+  emergencyFundMonths: z.number().int().min(0).max(24),
+  maxDrawdownPct: z.number().min(5).max(70),
+  savingsRatePct: z.number().min(0).max(80),
+  rebalanceThresholdPct: z.number().min(1).max(20),
+  targetAllocation: allocationVectorSchema,
+  currentAllocation: allocationVectorSchema,
+  simulation: z.object({
+    initialCapital: z.number().nonnegative(),
+    annualContribution: z.number().nonnegative(),
+    expectedReturnPct: z.number().min(-20).max(30),
+    annualVolatilityPct: z.number().min(0).max(60),
+    inflationPct: z.number().min(-5).max(20),
+    targetCapital: z.number().positive(),
+    simulations: z.number().int().min(100).max(10000),
+  }),
+})
+
+const tradingOverviewSchema = z.object({
+  account: z.object({
+    cashCents: z.number().int(),
+    positionsValueCents: z.number().int(),
+    equityCents: z.number().int(),
+    realizedPnlCents: z.number().int(),
+    buyingPowerCents: z.number().int(),
+  }),
+  policy: z.object({
+    maxPositionPct: z.number().min(1).max(100),
+    maxOrderNotionalCents: z.number().int().positive(),
+    allowShort: z.boolean(),
+    blockedSymbols: z.array(z.string().min(1).max(12)).max(200),
+  }),
+  positions: z
+    .array(
+      z.object({
+        symbol: z.string().min(1).max(12),
+        quantity: z.number(),
+        avgPriceCents: z.number().int().nonnegative(),
+        marketPriceCents: z.number().int().positive(),
+        marketValueCents: z.number().int(),
+        unrealizedPnlCents: z.number().int(),
+      })
+    )
+    .max(500),
+  recentOrders: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(120),
+        symbol: z.string().min(1).max(12),
+        side: z.enum(["buy", "sell"]),
+        quantity: z.number().positive(),
+        type: z.enum(["market", "limit"]),
+        status: z.enum(["filled", "rejected", "cancelled", "open"]),
+        requestedAt: z.string().datetime({ offset: true }),
+        executedAt: z.string().datetime({ offset: true }).nullable(),
+        fillPriceCents: z.number().int().positive().nullable(),
+        notionalCents: z.number().int().nonnegative(),
+        reason: z.string().max(400).optional(),
+      })
+    )
+    .max(100),
+})
+
 const messageSchema = z
   .object({
     id: z.string().min(1).max(100).optional(),
@@ -106,6 +179,8 @@ const requestSchema = z
     messages: z.array(messageSchema).min(1).max(60),
     portfolioData: portfolioSchema.optional(),
     uiLocale: z.enum(["fr", "en"]).optional(),
+    growthToolkit: growthToolkitSchema.optional(),
+    tradingOverview: tradingOverviewSchema.optional(),
   })
   .strict()
 
@@ -268,7 +343,7 @@ export async function POST(req: Request) {
     )
   }
 
-  const { messages, portfolioData, uiLocale } = parsedPayload.data
+  const { messages, portfolioData, uiLocale, growthToolkit, tradingOverview } = parsedPayload.data
   const portfolio: PortfolioData = portfolioData || DEFAULT_PORTFOLIO
   const summary = calculateSummary(portfolio.accounts)
   const preferredLanguage = uiLocale === "en" ? "English" : "French"
@@ -276,6 +351,13 @@ export async function POST(req: Request) {
     uiLocale === "en"
       ? "Respond in English unless the user explicitly asks for another language."
       : "Respond in French unless the user explicitly asks for another language."
+
+  const growthToolkitSection = growthToolkit
+    ? `\n### Long-Term Growth Toolkit:\n- Risk profile: ${growthToolkit.riskProfile}\n- Horizon: ${growthToolkit.horizonYears} years\n- Emergency fund: ${growthToolkit.emergencyFundMonths} months\n- Savings rate: ${growthToolkit.savingsRatePct}%\n- Max drawdown tolerance: ${growthToolkit.maxDrawdownPct}%\n- Rebalance threshold: ${growthToolkit.rebalanceThresholdPct}%\n- Target allocation: equities ${growthToolkit.targetAllocation.equities.toFixed(1)}%, bonds ${growthToolkit.targetAllocation.bonds.toFixed(1)}%, cash ${growthToolkit.targetAllocation.cash.toFixed(1)}%, alternatives ${growthToolkit.targetAllocation.alternatives.toFixed(1)}%\n- Current allocation: equities ${growthToolkit.currentAllocation.equities.toFixed(1)}%, bonds ${growthToolkit.currentAllocation.bonds.toFixed(1)}%, cash ${growthToolkit.currentAllocation.cash.toFixed(1)}%, alternatives ${growthToolkit.currentAllocation.alternatives.toFixed(1)}%\n- Simulation assumptions: initial capital ${growthToolkit.simulation.initialCapital.toFixed(0)}, annual contribution ${growthToolkit.simulation.annualContribution.toFixed(0)}, expected return ${growthToolkit.simulation.expectedReturnPct.toFixed(1)}%, volatility ${growthToolkit.simulation.annualVolatilityPct.toFixed(1)}%, inflation ${growthToolkit.simulation.inflationPct.toFixed(1)}%, target capital ${growthToolkit.simulation.targetCapital.toFixed(0)}\n`
+    : "\n### Long-Term Growth Toolkit:\nNo long-term toolkit data provided.\n"
+  const tradingOverviewSection = tradingOverview
+    ? `\n### Paper Trading Desk:\n- Cash: ${formatCurrencyFromCents(tradingOverview.account.cashCents)}\n- Equity: ${formatCurrencyFromCents(tradingOverview.account.equityCents)}\n- Position value: ${formatCurrencyFromCents(tradingOverview.account.positionsValueCents)}\n- Realized PnL: ${formatCurrencyFromCents(tradingOverview.account.realizedPnlCents)}\n- Buying power: ${formatCurrencyFromCents(tradingOverview.account.buyingPowerCents)}\n- Policy: max position ${tradingOverview.policy.maxPositionPct.toFixed(1)}%, max order ${formatCurrencyFromCents(tradingOverview.policy.maxOrderNotionalCents)}, short allowed ${tradingOverview.policy.allowShort ? "yes" : "no"}, blocked symbols ${tradingOverview.policy.blockedSymbols.join(", ") || "none"}\n- Current positions:\n${tradingOverview.positions.slice(0, 8).map((position) => `  - ${position.symbol}: qty ${position.quantity}, avg ${formatCurrencyFromCents(position.avgPriceCents)}, market ${formatCurrencyFromCents(position.marketPriceCents)}, value ${formatCurrencyFromCents(position.marketValueCents)}, unrealized PnL ${formatCurrencyFromCents(position.unrealizedPnlCents)}`).join("\n") || "  - No open positions"}\n- Recent orders:\n${tradingOverview.recentOrders.slice(0, 8).map((order) => `  - ${order.side.toUpperCase()} ${order.quantity} ${order.symbol} (${order.type.toUpperCase()}) => ${order.status.toUpperCase()}${order.fillPriceCents ? ` @ ${formatCurrencyFromCents(order.fillPriceCents)}` : ""}${order.reason ? ` (${order.reason})` : ""}`).join("\n") || "  - No recent orders"}\n`
+    : "\n### Paper Trading Desk:\nNo paper trading data provided.\n"
 
   const systemPrompt = `You are an expert financial advisor AI agent integrated into the user's financial dashboard. You have access to their complete financial portfolio data and can provide personalized investment advice and proactive guidance.
 
@@ -301,6 +383,8 @@ ${portfolio.goals.map((g: FinancialGoal) => `- ${g.title}: Target ${typeof g.tar
 
 ### Stock Market Actions:
 ${portfolio.stockActions.map((a: StockAction) => `- ${a.symbol} ${a.action.toUpperCase()}: ${a.shares} shares @ ${formatCurrencyFromCents(a.priceCents)} (${a.status}) - ${formatShortDateFromIso(a.tradeDateIso)}`).join("\n") || "No stock actions"}
+${growthToolkitSection}
+${tradingOverviewSection}
 
 ## Your Role:
 1. Analyze the user's portfolio and provide personalized investment advice
@@ -309,6 +393,8 @@ ${portfolio.stockActions.map((a: StockAction) => `- ${a.symbol} ${a.action.toUpp
 4. Warn about potential risks in their current allocation
 5. Recommend actions to reduce debt and increase savings
 6. Provide insights on spending patterns based on transactions
+7. Build a multi-year capital growth roadmap with annual reviews
+8. Propose rebalancing actions whenever allocation drift exceeds threshold
 
 ## Guidelines:
 - Preferred UI language: ${preferredLanguage}.
@@ -320,6 +406,10 @@ ${portfolio.stockActions.map((a: StockAction) => `- ${a.symbol} ${a.action.toUpp
 - Use clear, simple language avoiding excessive jargon
 - When asked about specific accounts or goals, reference the exact data
 - Always consider the user's debt when making investment recommendations
+- Prioritize capital preservation guardrails (emergency fund, debt, risk profile) before aggressive growth
+- For long-term questions, present a yearly execution plan and measurable checkpoints
+- If suggesting trades, include sizing rationale and risk controls from the paper trading policy
+- Do not imply real brokerage execution; this environment uses paper trading simulation
 
 Remember: You are their trusted financial advisor with full visibility into their finances. Provide personalized, data-driven advice.`
 

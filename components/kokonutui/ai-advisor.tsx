@@ -9,6 +9,13 @@ import { Bot, Send, User, Sparkles, RefreshCw, ChevronDown, ChevronUp } from "lu
 import { useRef, useEffect, useState } from "react"
 import { usePortfolio } from "@/lib/portfolio-context"
 import { loadSettingsSnapshot } from "@/lib/settings-store"
+import { getTradingOverview } from "@/lib/trading-client"
+import {
+  defaultGrowthToolkitData,
+  loadGrowthToolkitSnapshot,
+  type GrowthToolkitData,
+} from "@/lib/portfolio-growth-store"
+import type { PaperTradingOverview } from "@/lib/trading-types"
 
 interface AIAdvisorProps {
   className?: string
@@ -18,6 +25,8 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [input, setInput] = useState("")
   const [uiLocale, setUiLocale] = useState<"fr" | "en">("fr")
+  const [growthToolkit, setGrowthToolkit] = useState<GrowthToolkitData>(defaultGrowthToolkitData)
+  const [tradingOverview, setTradingOverview] = useState<PaperTradingOverview | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const modelLabel = process.env.NEXT_PUBLIC_OPENAI_MODEL_LABEL || "GPT-5.3-Codex"
   const { accounts, transactions, goals, totalBalance, stockActions } = usePortfolio()
@@ -31,6 +40,44 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
     syncLocale()
     const intervalId = window.setInterval(syncLocale, 2_500)
     return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [])
+
+  useEffect(() => {
+    const syncToolkit = () => {
+      setGrowthToolkit(loadGrowthToolkitSnapshot())
+    }
+
+    syncToolkit()
+    const intervalId = window.setInterval(syncToolkit, 2_500)
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    const syncTrading = async () => {
+      try {
+        const overview = await getTradingOverview()
+        if (active) {
+          setTradingOverview(overview)
+        }
+      } catch {
+        if (active) {
+          setTradingOverview(null)
+        }
+      }
+    }
+
+    void syncTrading()
+    const intervalId = window.setInterval(() => {
+      void syncTrading()
+    }, 10_000)
+
+    return () => {
+      active = false
       window.clearInterval(intervalId)
     }
   }, [])
@@ -50,6 +97,8 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
             totalBalance,
           },
           uiLocale,
+          growthToolkit,
+          tradingOverview,
         },
       }),
     }),
@@ -90,6 +139,7 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
             "Am I saving enough for emergencies?",
             "How should I pay off my debt?",
             "Analyze my spending patterns",
+            "Should I place a buy order now?",
           ],
         }
       : {
@@ -104,6 +154,7 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
             "Mon épargne de précaution est-elle suffisante ?",
             "Quelle stratégie pour rembourser mes dettes ?",
             "Analyse mes dépenses récentes",
+            "Dois-je passer un ordre d'achat maintenant ?",
           ],
         }
 

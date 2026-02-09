@@ -12,6 +12,7 @@ import {
   HelpCircle,
   Menu,
   TrendingUp,
+  CandlestickChart,
   PiggyBank,
   Target,
   Home,
@@ -105,6 +106,8 @@ export default function Sidebar() {
           { href: "/dashboard#transactions", icon: Receipt, label: "Transactions" },
           { href: "/dashboard#insights", icon: TrendingUp, label: "Insights", badge: "New" },
           { href: "/dashboard#stock-actions", icon: TrendingUp, label: "Ordres bourse" },
+          { href: "/dashboard#trading-desk", icon: CandlestickChart, label: "Trading Desk IA" },
+          { href: "/dashboard#growth-studio", icon: Target, label: "Growth Studio IA" },
         ],
       },
       {
@@ -181,7 +184,7 @@ export default function Sidebar() {
                   {openSections[section.id] && (
                     <div className="pb-2 space-y-1">
                       {section.items.map((item) => (
-                        <NavItem key={item.href} href={item.href} icon={item.icon} badge={item.badge}>
+                        <NavItem key={`${item.href}-${item.label}`} href={item.href} icon={item.icon} badge={item.badge}>
                           {item.label}
                         </NavItem>
                       ))}

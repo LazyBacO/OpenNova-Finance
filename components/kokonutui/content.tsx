@@ -6,6 +6,7 @@ import {
   CreditCard,
   Wallet,
   Bot,
+  CandlestickChart,
   TrendingUp,
   PieChart,
   PiggyBank,
@@ -26,6 +27,8 @@ import MonthlyBudgetPlanner from "./monthly-budget-planner"
 import PlanningScenarios from "./planning-scenarios"
 import Integrations from "./integrations"
 import SmartFinanceTools from "./smart-finance-tools"
+import PortfolioGrowthStudio from "./portfolio-growth-studio"
+import AiTradingDesk from "./ai-trading-desk"
 import { PortfolioProvider } from "@/lib/portfolio-context"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -39,6 +42,8 @@ export default function Content() {
       insights: "portfolio",
       "stock-actions": "portfolio",
       rebalancing: "portfolio",
+      "growth-studio": "portfolio",
+      "trading-desk": "portfolio",
       "budget-cashflow": "budget",
       "monthly-budget": "budget",
       "planning-scenarios": "budget",
@@ -205,6 +210,30 @@ export default function Content() {
               </h2>
             </div>
             <Rebalancing className="w-full" />
+          </section>
+
+          <section id="growth-studio" className="space-y-3 scroll-mt-24">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl border border-border/60 bg-primary/10">
+                <Target className="w-4 h-4 text-primary" />
+              </div>
+              <h2 className="text-sm font-semibold tracking-tight text-foreground">
+                Growth Studio IA
+              </h2>
+            </div>
+            <PortfolioGrowthStudio className="w-full" />
+          </section>
+
+          <section id="trading-desk" className="space-y-3 scroll-mt-24">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl border border-border/60 bg-primary/10">
+                <CandlestickChart className="w-4 h-4 text-primary" />
+              </div>
+              <h2 className="text-sm font-semibold tracking-tight text-foreground">
+                Trading Desk IA
+              </h2>
+            </div>
+            <AiTradingDesk className="w-full" />
           </section>
         </TabsContent>
 

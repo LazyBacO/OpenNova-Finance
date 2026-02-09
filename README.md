@@ -5,6 +5,8 @@ Modern financial dashboard with AI-powered insights, portfolio tracking, and a f
 ## Features
 - Accounts, transactions, goals, and stock actions tracking
 - AI advisor with portfolio-aware guidance
+- AI Growth Studio (risk profile, strategic allocation, Monte Carlo projection, rebalancing playbook)
+- AI Trading Desk (paper execution, risk policy, positions/orders overview)
 - Auto-save to localStorage
 - Dark mode + neon/glass visual style
 - Server sync API with per-user sync key (`/api/portfolio`)
