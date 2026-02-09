@@ -46,7 +46,14 @@ export default function AlertsNotifications({ className }: AlertsNotificationsPr
   const [preferences, setPreferences] = useState<NotificationPreferences>(
     defaultNotificationPreferences
   )
-  const [taskForm, setTaskForm] = useState({
+  const [taskForm, setTaskForm] = useState<{
+    title: string
+    dueDate: string
+    reminder: TaskItem["reminder"]
+    notes: string
+    channelEmail: boolean
+    channelPush: boolean
+  }>({
     title: "",
     dueDate: "",
     reminder: reminderOptions[1],
@@ -54,7 +61,14 @@ export default function AlertsNotifications({ className }: AlertsNotificationsPr
     channelEmail: defaultNotificationPreferences.email,
     channelPush: defaultNotificationPreferences.push,
   })
-  const [alertForm, setAlertForm] = useState({
+  const [alertForm, setAlertForm] = useState<{
+    title: string
+    metric: string
+    threshold: string
+    cadence: AlertItem["cadence"]
+    channelEmail: boolean
+    channelPush: boolean
+  }>({
     title: "",
     metric: "Allocation",
     threshold: "",
@@ -431,7 +445,12 @@ export default function AlertsNotifications({ className }: AlertsNotificationsPr
                   <select
                     className={inputClasses}
                     value={taskForm.reminder}
-                    onChange={(event) => setTaskForm({ ...taskForm, reminder: event.target.value })}
+                    onChange={(event) =>
+                      setTaskForm({
+                        ...taskForm,
+                        reminder: event.target.value as TaskItem["reminder"],
+                      })
+                    }
                   >
                     {reminderOptions.map((option) => (
                       <option key={option} value={option}>
@@ -555,7 +574,12 @@ export default function AlertsNotifications({ className }: AlertsNotificationsPr
                   <select
                     className={inputClasses}
                     value={alertForm.cadence}
-                    onChange={(event) => setAlertForm({ ...alertForm, cadence: event.target.value })}
+                    onChange={(event) =>
+                      setAlertForm({
+                        ...alertForm,
+                        cadence: event.target.value as AlertItem["cadence"],
+                      })
+                    }
                   >
                     {cadenceOptions.map((option) => (
                       <option key={option} value={option}>

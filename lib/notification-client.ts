@@ -1,13 +1,22 @@
 import type {
+  AlertCreateInput,
   AlertItem,
+  AlertUpdateInput,
   NotificationPreferences,
+  TaskCreateInput,
   TaskItem,
+  TaskUpdateInput,
 } from "@/lib/notification-types"
 
 const fetchJson = async <T>(input: RequestInfo, init?: RequestInit): Promise<T> => {
   const response = await fetch(input, init)
   if (!response.ok) {
-    throw new Error("Erreur réseau")
+    let detail = "Erreur réseau"
+    try {
+      const payload = (await response.json()) as { message?: string; error?: string }
+      detail = payload.message || payload.error || detail
+    } catch {}
+    throw new Error(detail)
   }
   return response.json() as Promise<T>
 }
@@ -17,7 +26,7 @@ export const getTasks = async (): Promise<TaskItem[]> => {
 }
 
 export const createTask = async (
-  task: Omit<TaskItem, "id" | "createdAt" | "updatedAt">
+  task: TaskCreateInput
 ): Promise<TaskItem> => {
   return fetchJson<TaskItem>("/api/tasks", {
     method: "POST",
@@ -28,7 +37,7 @@ export const createTask = async (
 
 export const updateTask = async (
   id: string,
-  updates: Partial<Omit<TaskItem, "id" | "createdAt">>
+  updates: TaskUpdateInput
 ): Promise<TaskItem> => {
   return fetchJson<TaskItem>("/api/tasks", {
     method: "PATCH",
@@ -42,7 +51,7 @@ export const getAlerts = async (): Promise<AlertItem[]> => {
 }
 
 export const createAlert = async (
-  alert: Omit<AlertItem, "id" | "createdAt" | "updatedAt">
+  alert: AlertCreateInput
 ): Promise<AlertItem> => {
   return fetchJson<AlertItem>("/api/alerts", {
     method: "POST",
@@ -53,7 +62,7 @@ export const createAlert = async (
 
 export const updateAlert = async (
   id: string,
-  updates: Partial<Omit<AlertItem, "id" | "createdAt">>
+  updates: AlertUpdateInput
 ): Promise<AlertItem> => {
   return fetchJson<AlertItem>("/api/alerts", {
     method: "PATCH",

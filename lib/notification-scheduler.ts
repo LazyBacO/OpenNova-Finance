@@ -1,12 +1,20 @@
-import type { AlertItem, NotificationPreferences, TaskItem } from "@/lib/notification-types"
+import type {
+  AlertItem,
+  CadenceOption,
+  NotificationPreferences,
+  ReminderOption,
+  TaskItem,
+} from "@/lib/notification-types"
 
-const REMINDER_OFFSETS: Record<string, number> = {
+const REMINDER_OFFSETS: Record<ReminderOption, number> = {
+  Aucun: 0,
   "1 heure avant": 60 * 60 * 1000,
   "24 heures avant": 24 * 60 * 60 * 1000,
   "1 semaine avant": 7 * 24 * 60 * 60 * 1000,
 }
 
-const CADENCE_OFFSETS: Record<string, number> = {
+const CADENCE_OFFSETS: Record<CadenceOption, number> = {
+  "Temps réel": 0,
   Quotidien: 24 * 60 * 60 * 1000,
   Hebdomadaire: 7 * 24 * 60 * 60 * 1000,
   Mensuel: 30 * 24 * 60 * 60 * 1000,
@@ -50,7 +58,7 @@ export const getNextTaskNotificationAt = (task: TaskItem, now: Date): Date | nul
     return null
   }
 
-  const offset = REMINDER_OFFSETS[task.reminder] ?? 0
+  const offset = REMINDER_OFFSETS[task.reminder]
   const reminderTime = new Date(dueDateTime.getTime() - offset)
 
   if (reminderTime.getTime() > now.getTime()) {
@@ -70,9 +78,6 @@ export const getNextAlertNotificationAt = (alert: AlertItem, now: Date): Date | 
   }
 
   const cadenceOffset = CADENCE_OFFSETS[alert.cadence]
-  if (!cadenceOffset) {
-    return now
-  }
 
   if (!alert.lastNotifiedAt) {
     return now

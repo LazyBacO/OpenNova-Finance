@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server"
+import { z } from "zod"
 import { addTask, readNotificationStore, updateTask } from "@/lib/notification-storage"
+import { taskCreateSchema, taskUpdateSchema } from "@/lib/notification-types"
+
+const taskPatchSchema = z.object({
+  id: z.string().min(1).max(100),
+  updates: taskUpdateSchema,
+})
 
 export const GET = async () => {
   const store = await readNotificationStore()
@@ -7,18 +14,48 @@ export const GET = async () => {
 }
 
 export const POST = async (request: Request) => {
-  const payload = (await request.json()) as Parameters<typeof addTask>[0]
-  const task = await addTask(payload)
-  return NextResponse.json(task)
+  let payload: unknown
+  try {
+    payload = await request.json()
+  } catch {
+    return NextResponse.json({ message: "Invalid JSON payload" }, { status: 400 })
+  }
+
+  const parsed = taskCreateSchema.safeParse(payload)
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        message: "Invalid task payload",
+        details: parsed.error.issues.slice(0, 3).map((issue) => issue.message),
+      },
+      { status: 400 }
+    )
+  }
+
+  const task = await addTask(parsed.data)
+  return NextResponse.json(task, { status: 201 })
 }
 
 export const PATCH = async (request: Request) => {
-  const payload = (await request.json()) as {
-    id: string
-    updates: Parameters<typeof updateTask>[1]
+  let payload: unknown
+  try {
+    payload = await request.json()
+  } catch {
+    return NextResponse.json({ message: "Invalid JSON payload" }, { status: 400 })
   }
 
-  const task = await updateTask(payload.id, payload.updates)
+  const parsed = taskPatchSchema.safeParse(payload)
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        message: "Invalid task update payload",
+        details: parsed.error.issues.slice(0, 3).map((issue) => issue.message),
+      },
+      { status: 400 }
+    )
+  }
+
+  const task = await updateTask(parsed.data.id, parsed.data.updates)
   if (!task) {
     return NextResponse.json({ message: "Task not found" }, { status: 404 })
   }

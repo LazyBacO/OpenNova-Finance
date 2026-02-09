@@ -27,8 +27,11 @@ OPENAI_API_KEY=your_openai_api_key
 OPENAI_MODEL=gpt-5.3-codex
 # Optional UI label (defaults to GPT-5.3-Codex)
 NEXT_PUBLIC_OPENAI_MODEL_LABEL=GPT-5.3-Codex
+# Optional: secure /api/notification-cron with this secret
+NOTIFICATION_CRON_SECRET=your_cron_secret
 ```
 For security reasons, `/api/chat` only accepts the server-side key (`OPENAI_API_KEY`).
+If `NOTIFICATION_CRON_SECRET` is set, `/api/notification-cron` requires either `x-cron-secret` or `Authorization: Bearer <secret>`.
 
 ## Scripts
 - `pnpm dev` — run locally

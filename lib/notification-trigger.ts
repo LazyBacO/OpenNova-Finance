@@ -9,8 +9,7 @@ import {
 } from "@/lib/notification-scheduler"
 import {
   readNotificationStore,
-  updateAlert,
-  updateTask,
+  writeNotificationStore,
 } from "@/lib/notification-storage"
 
 export type NotificationScanResult = {
@@ -20,7 +19,9 @@ export type NotificationScanResult = {
 export const runNotificationScan = async (): Promise<NotificationScanResult> => {
   const store = await readNotificationStore()
   const now = new Date()
+  const nowIso = now.toISOString()
   const triggered: NotificationDispatchPayload[] = []
+  let hasStoreUpdates = false
 
   for (const task of store.tasks) {
     const nextAt = getNextTaskNotificationAt(task, now)
@@ -33,7 +34,9 @@ export const runNotificationScan = async (): Promise<NotificationScanResult> => 
     }
 
     triggered.push(dispatchTaskNotification(task, store.preferences))
-    await updateTask(task.id, { lastNotifiedAt: now.toISOString() })
+    task.lastNotifiedAt = nowIso
+    task.updatedAt = nowIso
+    hasStoreUpdates = true
   }
 
   for (const alert of store.alerts) {
@@ -47,7 +50,13 @@ export const runNotificationScan = async (): Promise<NotificationScanResult> => 
     }
 
     triggered.push(dispatchAlertNotification(alert, store.preferences))
-    await updateAlert(alert.id, { lastNotifiedAt: now.toISOString() })
+    alert.lastNotifiedAt = nowIso
+    alert.updatedAt = nowIso
+    hasStoreUpdates = true
+  }
+
+  if (hasStoreUpdates) {
+    await writeNotificationStore(store)
   }
 
   return { triggered }
