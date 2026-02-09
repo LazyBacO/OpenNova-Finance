@@ -8,7 +8,6 @@ import {
   Wallet,
   ShoppingCart,
   CreditCard,
-  ArrowRight,
   TrendingUp,
   Zap,
   Banknote,

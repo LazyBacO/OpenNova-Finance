@@ -82,7 +82,7 @@ const loadJson = <T,>(key: string): { exists: boolean; value: T | null } => {
       return { exists: true, value: null }
     }
     return { exists: true, value: JSON.parse(stored) as T }
-  } catch (error) {
+  } catch {
     console.warn(`Failed to load ${key} from localStorage; clearing corrupt value.`)
     try {
       window.localStorage.removeItem(key)

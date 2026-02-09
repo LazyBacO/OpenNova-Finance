@@ -34,7 +34,8 @@ For security reasons, `/api/chat` only accepts the server-side key (`OPENAI_API_
 - `pnpm dev` — run locally
 - `pnpm build` — production build
 - `pnpm start` — run production server
-- `pnpm lint` — lint (requires eslint installed)
+- `pnpm typecheck` — TypeScript validation (`tsc --noEmit`)
+- `pnpm lint` — ESLint checks
 
 ## Notes
 - Auto-save uses localStorage (client-only).

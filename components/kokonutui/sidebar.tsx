@@ -19,6 +19,7 @@ import {
   Bell,
   ChevronDown,
 } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -58,7 +59,7 @@ export default function Sidebar() {
     children,
   }: {
     href: string
-    icon: any
+    icon: LucideIcon
     badge?: string
     children: React.ReactNode
   }) {

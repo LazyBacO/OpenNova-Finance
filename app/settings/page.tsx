@@ -34,7 +34,7 @@ export default function SettingsPage() {
           setSettings(stored)
           setStatus("idle")
         }
-      } catch (error) {
+      } catch {
         if (isMounted) {
           setStatus("error")
           setErrorMessage("Erreur lors du chargement des paramètres.")
@@ -59,7 +59,7 @@ export default function SettingsPage() {
       window.setTimeout(() => {
         setStatus((currentStatus) => (currentStatus === "saved" ? "idle" : currentStatus))
       }, 2000)
-    } catch (error) {
+    } catch {
       setStatus("error")
       setErrorMessage("Une erreur est survenue lors de la sauvegarde.")
     }

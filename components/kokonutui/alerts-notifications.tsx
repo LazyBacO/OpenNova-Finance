@@ -108,12 +108,11 @@ export default function AlertsNotifications({ className }: AlertsNotificationsPr
     }
   }, [])
 
-  const now = useMemo(() => new Date(), [tasks, alerts, preferences])
-
   const plannedTaskNotifications = useMemo(() => {
+    const referenceDate = new Date()
     return tasks
       .map((task) => {
-        const nextAt = getNextTaskNotificationAt(task, now)
+        const nextAt = getNextTaskNotificationAt(task, referenceDate)
         if (!nextAt) {
           return null
         }
@@ -127,12 +126,13 @@ export default function AlertsNotifications({ className }: AlertsNotificationsPr
         }
       })
       .filter((item): item is NonNullable<typeof item> => Boolean(item))
-  }, [tasks, now, preferences])
+  }, [tasks, preferences])
 
   const plannedAlertNotifications = useMemo(() => {
+    const referenceDate = new Date()
     return alerts
       .map((alert) => {
-        const nextAt = getNextAlertNotificationAt(alert, now)
+        const nextAt = getNextAlertNotificationAt(alert, referenceDate)
         if (!nextAt) {
           return null
         }
@@ -146,7 +146,7 @@ export default function AlertsNotifications({ className }: AlertsNotificationsPr
         }
       })
       .filter((item): item is NonNullable<typeof item> => Boolean(item))
-  }, [alerts, now, preferences])
+  }, [alerts, preferences])
 
   const plannedNotificationsCount =
     plannedTaskNotifications.length + plannedAlertNotifications.length
@@ -246,7 +246,7 @@ export default function AlertsNotifications({ className }: AlertsNotificationsPr
             </div>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Suivi des actions à mener pour sécuriser vos décisions d'investissement.
+            Suivi des actions à mener pour sécuriser vos décisions d&apos;investissement.
           </p>
         </div>
         <div className="rounded-xl border border-border/60 bg-background/70 p-4">
@@ -288,7 +288,7 @@ export default function AlertsNotifications({ className }: AlertsNotificationsPr
           <div className="fx-panel space-y-4 p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs text-muted-foreground">Rappels d'évènements</p>
+                <p className="text-xs text-muted-foreground">Rappels d&apos;évènements</p>
                 <h3 className="text-base font-semibold text-foreground">
                   Ne manquez aucun rendez-vous important
                 </h3>
@@ -403,7 +403,7 @@ export default function AlertsNotifications({ className }: AlertsNotificationsPr
               <div>
                 <p className="text-xs text-muted-foreground">Créer une tâche</p>
                 <h3 className="text-base font-semibold text-foreground">
-                  Ordonnez vos actions d'investissement
+                  Ordonnez vos actions d&apos;investissement
                 </h3>
               </div>
               <CheckCircle2 className="h-5 w-5 text-emerald-500" />
@@ -419,7 +419,7 @@ export default function AlertsNotifications({ className }: AlertsNotificationsPr
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="text-xs">Date d'échéance</Label>
+                  <Label className="text-xs">Date d&apos;échéance</Label>
                   <Input
                     type="date"
                     value={taskForm.dueDate}
@@ -525,7 +525,7 @@ export default function AlertsNotifications({ className }: AlertsNotificationsPr
             </div>
             <form className="mt-4 space-y-4" onSubmit={handleAlertSubmit}>
               <div className="space-y-2">
-                <Label className="text-xs">Nom de l'alerte</Label>
+                  <Label className="text-xs">Nom de l&apos;alerte</Label>
                 <Input
                   value={alertForm.title}
                   onChange={(event) => setAlertForm({ ...alertForm, title: event.target.value })}
@@ -591,7 +591,7 @@ export default function AlertsNotifications({ className }: AlertsNotificationsPr
                 </div>
               </div>
               <Button type="submit" className="w-full">
-                Ajouter l'alerte
+                Ajouter l&apos;alerte
               </Button>
             </form>
             <div className="mt-4 space-y-2">

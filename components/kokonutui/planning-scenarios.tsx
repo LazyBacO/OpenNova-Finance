@@ -131,7 +131,7 @@ export default function PlanningScenarios({ className }: PlanningScenariosProps)
               <div>
                 <p className="text-sm font-semibold text-foreground">Profil</p>
                 <p className="text-[11px] text-muted-foreground">
-                  Ces paramètres pilotent la durée de projection et la capacité d'épargne.
+                  Ces paramètres pilotent la durée de projection et la capacité d&apos;épargne.
                 </p>
               </div>
             </div>
@@ -348,8 +348,8 @@ export default function PlanningScenarios({ className }: PlanningScenariosProps)
           </table>
         </div>
         <p className="mt-3 text-[11px] text-muted-foreground">
-          Hypothèse: l'épargne annuelle alimente la croissance chaque année. Les scénarios "marché" appliquent
-          un choc initial sur l'épargne existante.
+          Hypothèse: l&apos;épargne annuelle alimente la croissance chaque année. Les scénarios &quot;marché&quot; appliquent
+          un choc initial sur l&apos;épargne existante.
         </p>
       </div>
     </div>

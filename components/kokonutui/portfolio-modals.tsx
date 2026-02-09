@@ -3,7 +3,6 @@
 import React from "react"
 
 import { useState, useEffect } from "react"
-import { cn } from "@/lib/utils"
 import { X, Trash2 } from "lucide-react"
 import type { AccountItem, Transaction, FinancialGoal, StockAction } from "@/lib/portfolio-data"
 
