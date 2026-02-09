@@ -17,6 +17,7 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [input, setInput] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const modelLabel = process.env.NEXT_PUBLIC_OPENAI_MODEL_LABEL || "GPT-5.3-Codex"
   const { accounts, transactions, goals, totalBalance, stockActions } = usePortfolio()
 
   const { messages, sendMessage, status, setMessages } = useChat({
@@ -26,7 +27,6 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
         body: {
           messages,
           id,
-          apiKey: window.localStorage.getItem("openai_api_key") || undefined,
           portfolioData: {
             accounts,
             transactions,
@@ -99,9 +99,13 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
           <div className="p-2 rounded-xl border border-border/60 bg-primary/10">
             <Bot className="w-4 h-4 text-primary" />
           </div>
-          <p className="text-xs text-muted-foreground">
-            Contrôle global, insights instantanés et exécution guidée.
-          </p>
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">AI Financial Advisor</h2>
+            <p className="text-xs text-muted-foreground">Powered by {modelLabel}</p>
+            <p className="text-xs text-muted-foreground">
+              Contrôle global, insights instantanés et exécution guidée.
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {messages.length > 0 && (

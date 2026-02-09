@@ -1,6 +1,6 @@
 import { streamText, convertToModelMessages } from "ai"
 import { createOpenAI } from "@ai-sdk/openai"
-
+import { z } from "zod"
 import type { AccountItem, Transaction, FinancialGoal, StockAction } from "@/lib/portfolio-data"
 
 interface PortfolioData {
@@ -9,6 +9,174 @@ interface PortfolioData {
   goals: FinancialGoal[]
   stockActions: StockAction[]
   totalBalance: string
+}
+
+function parsePositiveInteger(value: string | undefined, fallback: number) {
+  if (!value) return fallback
+  const parsed = Number.parseInt(value, 10)
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback
+  return parsed
+}
+
+const RATE_LIMIT_WINDOW_MS = parsePositiveInteger(process.env.AI_RATE_LIMIT_WINDOW_MS, 60_000)
+const RATE_LIMIT_MAX_REQUESTS = parsePositiveInteger(process.env.AI_RATE_LIMIT_MAX_REQUESTS, 20)
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>()
+
+const accountSchema = z.object({
+  id: z.string().min(1).max(100),
+  title: z.string().min(1).max(120),
+  description: z.string().max(240).optional(),
+  balance: z.string().min(1).max(40),
+  type: z.enum(["savings", "checking", "investment", "debt"]),
+})
+
+const transactionSchema = z.object({
+  id: z.string().min(1).max(100),
+  title: z.string().min(1).max(160),
+  amount: z.string().min(1).max(40),
+  type: z.enum(["incoming", "outgoing"]),
+  category: z.string().min(1).max(80),
+  timestamp: z.string().min(1).max(80),
+  status: z.enum(["completed", "pending", "failed"]),
+})
+
+const goalSchema = z.object({
+  id: z.string().min(1).max(100),
+  title: z.string().min(1).max(120),
+  subtitle: z.string().min(1).max(180),
+  iconStyle: z.string().min(1).max(40),
+  date: z.string().min(1).max(80),
+  amount: z.string().max(40).optional(),
+  status: z.enum(["pending", "in-progress", "completed"]),
+  progress: z.number().min(0).max(100).optional(),
+})
+
+const stockActionSchema = z.object({
+  id: z.string().min(1).max(100),
+  symbol: z.string().min(1).max(20),
+  action: z.enum(["buy", "sell"]),
+  shares: z.number().nonnegative(),
+  price: z.string().min(1).max(40),
+  tradeDate: z.string().min(1).max(80),
+  status: z.enum(["executed", "pending", "cancelled"]),
+})
+
+const portfolioSchema = z.object({
+  accounts: z.array(accountSchema).max(100),
+  transactions: z.array(transactionSchema).max(500),
+  goals: z.array(goalSchema).max(100),
+  stockActions: z.array(stockActionSchema).max(500),
+  totalBalance: z.string().min(1).max(40),
+})
+
+const messageSchema = z
+  .object({
+    id: z.string().min(1).max(100).optional(),
+    role: z.enum(["system", "user", "assistant", "tool"]),
+    parts: z
+      .array(
+        z
+          .object({
+            type: z.string().min(1).max(32),
+          })
+          .passthrough()
+      )
+      .max(50)
+      .optional(),
+    content: z.unknown().optional(),
+  })
+  .passthrough()
+  .refine((message) => message.parts !== undefined || message.content !== undefined, {
+    message: "Each message must include parts or content.",
+  })
+
+const requestSchema = z
+  .object({
+    id: z.string().min(1).max(100).optional(),
+    messages: z.array(messageSchema).min(1).max(60),
+    portfolioData: portfolioSchema.optional(),
+  })
+  .strict()
+
+const DEFAULT_PORTFOLIO: PortfolioData = {
+  accounts: [],
+  transactions: [],
+  goals: [],
+  stockActions: [],
+  totalBalance: "$0.00",
+}
+
+function jsonResponse(payload: unknown, status: number, headers?: HeadersInit) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      ...headers,
+    },
+  })
+}
+
+function getClientIp(req: Request) {
+  const forwardedFor = req.headers.get("x-forwarded-for")
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0]?.trim() || "unknown"
+  }
+
+  const realIp = req.headers.get("x-real-ip")
+  if (realIp) {
+    return realIp.trim()
+  }
+
+  return "unknown"
+}
+
+function pruneRateLimitStore(now: number) {
+  for (const [key, value] of rateLimitStore.entries()) {
+    if (value.resetAt <= now) {
+      rateLimitStore.delete(key)
+    }
+  }
+}
+
+function enforceRateLimit(ip: string, now = Date.now()) {
+  if (rateLimitStore.size > 1000) {
+    pruneRateLimitStore(now)
+  }
+
+  const current = rateLimitStore.get(ip)
+
+  if (!current || current.resetAt <= now) {
+    rateLimitStore.set(ip, {
+      count: 1,
+      resetAt: now + RATE_LIMIT_WINDOW_MS,
+    })
+
+    return {
+      allowed: true,
+      remaining: RATE_LIMIT_MAX_REQUESTS - 1,
+      resetAt: Math.ceil((now + RATE_LIMIT_WINDOW_MS) / 1000),
+      retryAfterSeconds: 0,
+    }
+  }
+
+  if (current.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return {
+      allowed: false,
+      remaining: 0,
+      resetAt: Math.ceil(current.resetAt / 1000),
+      retryAfterSeconds: Math.max(1, Math.ceil((current.resetAt - now) / 1000)),
+    }
+  }
+
+  current.count += 1
+  rateLimitStore.set(ip, current)
+
+  return {
+    allowed: true,
+    remaining: Math.max(0, RATE_LIMIT_MAX_REQUESTS - current.count),
+    resetAt: Math.ceil(current.resetAt / 1000),
+    retryAfterSeconds: 0,
+  }
 }
 
 function calculateSummary(accounts: AccountItem[]) {
@@ -38,16 +206,53 @@ function calculateSummary(accounts: AccountItem[]) {
 }
 
 export async function POST(req: Request) {
-  const { messages, portfolioData, apiKey } = await req.json()
+  const key = process.env.OPENAI_API_KEY
+  if (!key) {
+    return jsonResponse(
+      {
+        error:
+          "Server is missing OPENAI_API_KEY. Configure it in environment variables before using /api/chat.",
+      },
+      500
+    )
+  }
+
+  const rateLimit = enforceRateLimit(getClientIp(req))
+  if (!rateLimit.allowed) {
+    return jsonResponse(
+      { error: "Too many AI requests. Please retry shortly." },
+      429,
+      {
+        "Retry-After": String(rateLimit.retryAfterSeconds),
+        "X-RateLimit-Limit": String(RATE_LIMIT_MAX_REQUESTS),
+        "X-RateLimit-Remaining": String(rateLimit.remaining),
+        "X-RateLimit-Reset": String(rateLimit.resetAt),
+      }
+    )
+  }
+
+  let payload: unknown
+  try {
+    payload = await req.json()
+  } catch {
+    return jsonResponse({ error: "Invalid JSON payload." }, 400)
+  }
+
+  const parsedPayload = requestSchema.safeParse(payload)
+  if (!parsedPayload.success) {
+    return jsonResponse(
+      {
+        error: "Invalid chat request payload.",
+        details: parsedPayload.error.issues.slice(0, 3).map((issue) => issue.message),
+      },
+      400
+    )
+  }
+
+  const { messages, portfolioData } = parsedPayload.data
 
   // Use dynamic portfolio data if provided, otherwise use defaults
-  const portfolio: PortfolioData = portfolioData || {
-    accounts: [],
-    transactions: [],
-    goals: [],
-    stockActions: [],
-    totalBalance: "$0.00",
-  }
+  const portfolio: PortfolioData = portfolioData || DEFAULT_PORTFOLIO
 
   const summary = calculateSummary(portfolio.accounts)
 
@@ -96,25 +301,27 @@ ${portfolio.stockActions.map((a: StockAction) => `- ${a.symbol} ${a.action.toUpp
 
 Remember: You are their trusted financial advisor with full visibility into their finances. Provide personalized, data-driven advice.`
 
-  const key = apiKey || process.env.OPENAI_API_KEY
+  const openai = createOpenAI({ apiKey: key })
+  const modelId = process.env.OPENAI_MODEL || "gpt-5.3-codex"
+  let modelMessages: Awaited<ReturnType<typeof convertToModelMessages>>
 
-  if (!key) {
-    return new Response(
-      JSON.stringify({
-        error:
-          "Missing OpenAI API key. Set an API key in localStorage under 'openai_api_key' or configure the server with OPENAI_API_KEY.",
-      }),
-      { status: 401, headers: { "Content-Type": "application/json" } }
+  try {
+    modelMessages = await convertToModelMessages(
+      messages as Parameters<typeof convertToModelMessages>[0]
+    )
+  } catch {
+    return jsonResponse(
+      {
+        error: "Invalid message structure for model conversion.",
+      },
+      400
     )
   }
-
-  const openai = createOpenAI({ apiKey: key })
-  const modelId = process.env.OPENAI_MODEL || "gpt-5.2"
 
   const result = streamText({
     model: openai(modelId),
     system: systemPrompt,
-    messages: await convertToModelMessages(messages),
+    messages: modelMessages,
   })
 
   return result.toUIMessageStreamResponse()

@@ -23,15 +23,12 @@ Create a `.env.local` file:
 
 ```bash
 OPENAI_API_KEY=your_openai_api_key
-# Optional (defaults to gpt-5.2)
-OPENAI_MODEL=gpt-5.2
+# Optional (defaults to gpt-5.3-codex)
+OPENAI_MODEL=gpt-5.3-codex
+# Optional UI label (defaults to GPT-5.3-Codex)
+NEXT_PUBLIC_OPENAI_MODEL_LABEL=GPT-5.3-Codex
 ```
-
-You can also set a local demo key in the browser:
-
-```js
-localStorage.setItem("openai_api_key", "your_openai_api_key")
-```
+For security reasons, `/api/chat` only accepts the server-side key (`OPENAI_API_KEY`).
 
 ## Scripts
 - `pnpm dev` — run locally

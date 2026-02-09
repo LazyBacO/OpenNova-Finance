@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useState } from "react"
 import { LogOut, MoveUpRight, Settings, CreditCard, FileText } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -34,8 +34,6 @@ export default function Profile01({
   avatar = defaultProfile.avatar,
   subscription = defaultProfile.subscription,
 }: Partial<Profile01Props> = defaultProfile) {
-  const [apiKey, setApiKey] = useState("")
-  const [showApiKey, setShowApiKey] = useState(false)
   const [emailAlerts, setEmailAlerts] = useState(true)
   const [pushAlerts, setPushAlerts] = useState(false)
   const [weeklyReport, setWeeklyReport] = useState(true)
@@ -43,21 +41,6 @@ export default function Profile01({
   const [currency, setCurrency] = useState("USD")
   const [language, setLanguage] = useState("en")
   const [timezone, setTimezone] = useState("GMT")
-
-  useEffect(() => {
-    const storedKey = window.localStorage.getItem("openai_api_key") || ""
-    setApiKey(storedKey)
-  }, [])
-
-  useEffect(() => {
-    if (apiKey) {
-      window.localStorage.setItem("openai_api_key", apiKey)
-    } else {
-      window.localStorage.removeItem("openai_api_key")
-    }
-  }, [apiKey])
-
-  const apiKeyIsValid = apiKey.length === 0 || apiKey.startsWith("sk-")
 
   const menuItems: MenuItem[] = [
     {
@@ -170,40 +153,10 @@ export default function Profile01({
                 </label>
               </div>
 
-              <label className="space-y-1 text-sm">
-                <span className="text-xs text-muted-foreground">ChatGPT API Key</span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type={showApiKey ? "text" : "password"}
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="sk-..."
-                    className="w-full rounded-md border border-border/60 bg-background/40 px-2 py-1 text-sm text-foreground placeholder:text-muted-foreground/70"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowApiKey((current) => !current)}
-                    className="text-xs font-medium text-muted-foreground hover:text-foreground"
-                  >
-                    {showApiKey ? "Masquer" : "Afficher"}
-                  </button>
-                </div>
-                {!apiKeyIsValid && (
-                  <span className="text-[11px] text-rose-500">La clé doit commencer par “sk-”.</span>
-                )}
-                <span className="text-[11px] text-muted-foreground">
-                  Stored locally in your browser to enable the latest ChatGPT model for finance
-                  agent responses.
-                </span>
-                <a
-                  href="https://platform.openai.com/api-keys"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[11px] font-medium text-primary hover:text-primary/80"
-                >
-                  Create an OpenAI API key
-                </a>
-              </label>
+              <div className="rounded-md border border-border/60 bg-background/40 p-2 text-[11px] text-muted-foreground">
+                AI access is secured server-side. Configure <code>OPENAI_API_KEY</code> in
+                <code>.env.local</code> to enable advisor responses.
+              </div>
 
               <label className="space-y-1 text-sm">
                 <span className="text-xs text-muted-foreground">Timezone</span>
