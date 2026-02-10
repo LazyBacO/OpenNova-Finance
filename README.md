@@ -40,7 +40,8 @@ Le tout est pense pour une experience produit complete: analyser, decider, execu
   - analyse technique (RSI, MACD, SMA, Bollinger, ATR, ADX),
   - analyse fondamentale (PE, ROE, growth, FCF...),
   - registre des positions et performance,
-  - alertes intelligentes et signaux proactifs
+  - alertes intelligentes et signaux proactifs,
+  - test de connexion API Massive/TwelveData depuis `Settings`
 - Persistance locale (`localStorage`) + sync serveur par cle (`/api/portfolio`)
 - Qualite logicielle: typecheck + lint + tests + build
 
@@ -104,6 +105,41 @@ pnpm dev
 
 Application accessible sur `http://localhost:3000` (redirection vers `/dashboard`).
 
+## Integrations API de marche (Massive + TwelveData)
+
+Cette section decrit clairement ce qui est integre dans OpenNova pour les donnees boursieres en temps reel.
+
+### Ce qui est deja integre
+
+| Integration | Role dans l'application | Configuration | Remplacement par utilisateur |
+|---|---|---|---|
+| `Massive (Polygon)` | Cotations/actions + contexte analyse | `.env.local` (`MASSIVE_*`) | Oui, depuis `Settings > Donnees de marche` |
+| `TwelveData` | Cotations temps reel + contexte analyse | `.env.local` (`TWELVEDATA_*`) | Oui, depuis `Settings > Donnees de marche` |
+| `Routage multi-provider` | Fallback automatique (`auto`) entre providers | `provider: auto/massive/twelvedata` | Oui, via select dans `Settings` |
+
+### Interface Settings (visible pour l'utilisateur)
+
+Dans `Settings > Donnees de marche`, l'utilisateur peut:
+- choisir le provider prioritaire (`auto`, `massive`, `twelvedata`),
+- remplacer la cle Massive,
+- remplacer la cle TwelveData,
+- cliquer sur `Tester la connexion API` pour Massive,
+- cliquer sur `Tester la connexion API` pour TwelveData.
+
+Le test de connexion affiche un statut explicite:
+- `Test en cours...`
+- `Connexion OK (...)`
+- message d'erreur detaille (cle manquante, provider desactive, erreur upstream).
+
+### Headers API supportes pour les donnees de marche
+
+OpenNova accepte des overrides par requete via headers:
+- `x-market-provider: auto|massive|twelvedata`
+- `x-massive-api-key: <cle_massive>`
+- `x-twelvedata-api-key: <cle_twelvedata>`
+
+Ces headers sont utilises automatiquement par le client interne quand l'utilisateur configure ses cles dans `Settings`.
+
 ## Manuel d'utilisation
 
 ### Etape 1 - Verifier l'agent IA
@@ -136,7 +172,19 @@ Application accessible sur `http://localhost:3000` (redirection vers `/dashboard
    - message de rejet explicite en cas de guardrail,
    - impact sur cash/equity/positions.
 
-### Etape 4 - Exploiter Stock Intelligence
+### Etape 4 - Valider les integrations API de marche
+
+1. Ouvre `Settings`.
+2. Va dans `Donnees de marche`.
+3. Colle tes cles API:
+   - `TwelveData`
+   - `Massive (Polygon)`
+4. Clique `Tester la connexion API` pour chaque provider.
+5. Verifie le retour:
+   - succes avec source et prix,
+   - ou erreur explicite a corriger.
+
+### Etape 5 - Exploiter Stock Intelligence
 
 1. Ouvre `Stock Intelligence IA`.
 2. Lance une analyse manuelle sur un ticker (ex: `AAPL`).
@@ -190,6 +238,70 @@ Headers recommandes pour la creation d'ordre:
 - `POST /api/stock-analysis`
 - `GET /api/stock-analysis?action=health`
 - `GET /api/stock-analysis?action=sample&symbol=AAPL`
+
+Headers marche supportes sur `POST /api/stock-analysis`:
+- `x-market-provider: auto|massive|twelvedata`
+- `x-massive-api-key: <cle_massive>`
+- `x-twelvedata-api-key: <cle_twelvedata>`
+
+### Market Data Connectivity (nouveau)
+- `POST /api/market-data/test-connection`
+
+Permet de verifier rapidement qu'une cle API provider fonctionne.
+
+Exemple requete Massive:
+
+```http
+POST /api/market-data/test-connection
+content-type: application/json
+x-market-provider: massive
+x-massive-api-key: your_massive_api_key
+
+{
+  "provider": "massive",
+  "symbol": "AAPL"
+}
+```
+
+Exemple requete TwelveData:
+
+```http
+POST /api/market-data/test-connection
+content-type: application/json
+x-market-provider: twelvedata
+x-twelvedata-api-key: your_twelvedata_api_key
+
+{
+  "provider": "twelvedata",
+  "symbol": "MSFT"
+}
+```
+
+Reponse de succes (exemple):
+
+```json
+{
+  "success": true,
+  "data": {
+    "provider": "twelvedata",
+    "source": "twelvedata-live",
+    "symbol": "MSFT",
+    "currentPrice": 421.55,
+    "lastUpdatedIso": "2026-02-10T21:00:00.000Z"
+  }
+}
+```
+
+Reponse d'erreur (exemple):
+
+```json
+{
+  "success": false,
+  "error": "Cle Massive manquante.",
+  "provider": "massive",
+  "symbol": "AAPL"
+}
+```
 
 ### Sync portefeuille
 - `GET /api/portfolio`
