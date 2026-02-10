@@ -107,6 +107,8 @@ export default function Sidebar() {
           { href: "/dashboard#insights", icon: TrendingUp, label: "Insights", badge: "New" },
           { href: "/dashboard#stock-actions", icon: TrendingUp, label: "Ordres bourse" },
           { href: "/dashboard#trading-desk", icon: CandlestickChart, label: "Trading Desk IA" },
+          { href: "/dashboard#stock-intelligence", icon: BarChart2, label: "Stock Intelligence" },
+          { href: "/dashboard#stock-alerts", icon: Bell, label: "Alertes actions" },
           { href: "/dashboard#growth-studio", icon: Target, label: "Growth Studio IA" },
         ],
       },

@@ -152,6 +152,98 @@ const tradingOverviewSchema = z.object({
     .max(100),
 })
 
+const stockIntelligenceSchema = z.object({
+  summary: z.string().max(6000),
+  registry: z.object({
+    stats: z.object({
+      totalInvested: z.number(),
+      totalRealizedGainLoss: z.number(),
+      totalRealizedReturnPct: z.number(),
+      avgReturnClosed: z.number(),
+      activePositions: z.number().int().nonnegative(),
+      closedPositions: z.number().int().nonnegative(),
+      totalTrades: z.number().int().nonnegative(),
+      winRate: z.number().min(0).max(100),
+      bestTrade: z
+        .object({
+          action: z.object({
+            symbol: z.string().min(1).max(20),
+          }),
+          realizedGainLossPercent: z.number().optional(),
+        })
+        .nullable(),
+      worstTrade: z
+        .object({
+          action: z.object({
+            symbol: z.string().min(1).max(20),
+          }),
+          realizedGainLossPercent: z.number().optional(),
+        })
+        .nullable(),
+    }),
+    activePositions: z
+      .array(
+        z.object({
+          id: z.string().min(1).max(200),
+          symbol: z.string().min(1).max(20),
+          side: z.enum(["buy", "sell"]),
+          shares: z.number().positive(),
+          entryPrice: z.number().positive(),
+          signal: z.enum(["strong-buy", "buy", "hold", "sell", "strong-sell"]),
+          confidence: z.number().min(0).max(100),
+          riskScore: z.number().min(0).max(100),
+          targetPrice: z.number().positive(),
+          stopLoss: z.number().positive().nullable(),
+          potentialReturn: z.number(),
+        })
+      )
+      .max(100),
+    recentAnalyses: z
+      .array(
+        z.object({
+          id: z.string().min(1).max(200),
+          symbol: z.string().min(1).max(20),
+          signal: z.enum(["strong-buy", "buy", "hold", "sell", "strong-sell"]),
+          confidence: z.number().min(0).max(100),
+          createdAt: z.string().min(1).max(80),
+          status: z.enum(["active", "closed", "archived"]),
+          potentialReturn: z.number(),
+        })
+      )
+      .max(200),
+  }),
+  alerts: z.object({
+    activeCount: z.number().int().nonnegative(),
+    criticalCount: z.number().int().nonnegative(),
+    warningCount: z.number().int().nonnegative(),
+    active: z
+      .array(
+        z.object({
+          id: z.string().min(1).max(200),
+          symbol: z.string().min(1).max(20),
+          type: z.enum(["price-target", "rsi-signal", "volatility", "trend", "news"]),
+          severity: z.enum(["info", "warning", "critical"]),
+          condition: z.string().max(400),
+          message: z.string().max(400),
+          createdAt: z.string().max(80),
+        })
+      )
+      .max(100),
+    recentTriggered: z
+      .array(
+        z.object({
+          id: z.string().min(1).max(200),
+          symbol: z.string().min(1).max(20),
+          severity: z.enum(["info", "warning", "critical"]),
+          message: z.string().max(400),
+          triggeredAt: z.string().max(80).optional(),
+          currentValue: z.number().optional(),
+        })
+      )
+      .max(100),
+  }),
+})
+
 const messageSchema = z
   .object({
     id: z.string().min(1).max(100).optional(),
@@ -181,6 +273,7 @@ const requestSchema = z
     uiLocale: z.enum(["fr", "en"]).optional(),
     growthToolkit: growthToolkitSchema.optional(),
     tradingOverview: tradingOverviewSchema.optional(),
+    stockIntelligence: stockIntelligenceSchema.optional(),
   })
   .strict()
 
@@ -343,7 +436,7 @@ export async function POST(req: Request) {
     )
   }
 
-  const { messages, portfolioData, uiLocale, growthToolkit, tradingOverview } = parsedPayload.data
+  const { messages, portfolioData, uiLocale, growthToolkit, tradingOverview, stockIntelligence } = parsedPayload.data
   const portfolio: PortfolioData = portfolioData || DEFAULT_PORTFOLIO
   const summary = calculateSummary(portfolio.accounts)
   const preferredLanguage = uiLocale === "en" ? "English" : "French"
@@ -358,6 +451,9 @@ export async function POST(req: Request) {
   const tradingOverviewSection = tradingOverview
     ? `\n### Paper Trading Desk:\n- Cash: ${formatCurrencyFromCents(tradingOverview.account.cashCents)}\n- Equity: ${formatCurrencyFromCents(tradingOverview.account.equityCents)}\n- Position value: ${formatCurrencyFromCents(tradingOverview.account.positionsValueCents)}\n- Realized PnL: ${formatCurrencyFromCents(tradingOverview.account.realizedPnlCents)}\n- Buying power: ${formatCurrencyFromCents(tradingOverview.account.buyingPowerCents)}\n- Policy: max position ${tradingOverview.policy.maxPositionPct.toFixed(1)}%, max order ${formatCurrencyFromCents(tradingOverview.policy.maxOrderNotionalCents)}, short allowed ${tradingOverview.policy.allowShort ? "yes" : "no"}, blocked symbols ${tradingOverview.policy.blockedSymbols.join(", ") || "none"}\n- Current positions:\n${tradingOverview.positions.slice(0, 8).map((position) => `  - ${position.symbol}: qty ${position.quantity}, avg ${formatCurrencyFromCents(position.avgPriceCents)}, market ${formatCurrencyFromCents(position.marketPriceCents)}, value ${formatCurrencyFromCents(position.marketValueCents)}, unrealized PnL ${formatCurrencyFromCents(position.unrealizedPnlCents)}`).join("\n") || "  - No open positions"}\n- Recent orders:\n${tradingOverview.recentOrders.slice(0, 8).map((order) => `  - ${order.side.toUpperCase()} ${order.quantity} ${order.symbol} (${order.type.toUpperCase()}) => ${order.status.toUpperCase()}${order.fillPriceCents ? ` @ ${formatCurrencyFromCents(order.fillPriceCents)}` : ""}${order.reason ? ` (${order.reason})` : ""}`).join("\n") || "  - No recent orders"}\n`
     : "\n### Paper Trading Desk:\nNo paper trading data provided.\n"
+  const stockIntelligenceSection = stockIntelligence
+    ? `\n### Stock Intelligence:\n- Summary:\n${stockIntelligence.summary}\n- Stats: invested ${stockIntelligence.registry.stats.totalInvested.toFixed(2)}, realizedPnL ${stockIntelligence.registry.stats.totalRealizedGainLoss.toFixed(2)}, realizedReturn ${stockIntelligence.registry.stats.totalRealizedReturnPct.toFixed(2)}%, active ${stockIntelligence.registry.stats.activePositions}, closed ${stockIntelligence.registry.stats.closedPositions}, winRate ${stockIntelligence.registry.stats.winRate.toFixed(1)}%\n- Active positions:\n${stockIntelligence.registry.activePositions.slice(0, 8).map((position) => `  - ${position.symbol} ${position.side.toUpperCase()} ${position.shares} @ ${position.entryPrice.toFixed(2)}, signal ${position.signal}, confidence ${position.confidence.toFixed(0)}%, risk ${position.riskScore.toFixed(0)}, target ${position.targetPrice.toFixed(2)}, stop ${position.stopLoss?.toFixed(2) ?? "n/a"}`).join("\n") || "  - No active analyzed position"}\n- Recent analyses:\n${stockIntelligence.registry.recentAnalyses.slice(0, 8).map((item) => `  - ${item.symbol} ${item.signal} (${item.confidence.toFixed(0)}%) status ${item.status}, expected ${item.potentialReturn.toFixed(2)}%`).join("\n") || "  - No recent stock analysis"}\n- Alerts: active ${stockIntelligence.alerts.activeCount}, critical ${stockIntelligence.alerts.criticalCount}, warning ${stockIntelligence.alerts.warningCount}\n- Recent triggered alerts:\n${stockIntelligence.alerts.recentTriggered.slice(0, 8).map((alert) => `  - ${alert.symbol} ${alert.severity.toUpperCase()}: ${alert.message}`).join("\n") || "  - No recently triggered alert"}\n`
+    : "\n### Stock Intelligence:\nNo stock intelligence context provided.\n"
 
   const systemPrompt = `You are an expert financial advisor AI agent integrated into the user's financial dashboard. You have access to their complete financial portfolio data and can provide personalized investment advice and proactive guidance.
 
@@ -385,6 +481,7 @@ ${portfolio.goals.map((g: FinancialGoal) => `- ${g.title}: Target ${typeof g.tar
 ${portfolio.stockActions.map((a: StockAction) => `- ${a.symbol} ${a.action.toUpperCase()}: ${a.shares} shares @ ${formatCurrencyFromCents(a.priceCents)} (${a.status}) - ${formatShortDateFromIso(a.tradeDateIso)}`).join("\n") || "No stock actions"}
 ${growthToolkitSection}
 ${tradingOverviewSection}
+${stockIntelligenceSection}
 
 ## Your Role:
 1. Analyze the user's portfolio and provide personalized investment advice
@@ -410,6 +507,8 @@ ${tradingOverviewSection}
 - For long-term questions, present a yearly execution plan and measurable checkpoints
 - If suggesting trades, include sizing rationale and risk controls from the paper trading policy
 - Do not imply real brokerage execution; this environment uses paper trading simulation
+- Always use the stock intelligence context (signals, RSI/MACD, registry performance, alerts) when giving equity advice
+- Proactively surface one to three high-impact actions when critical or warning alerts exist
 
 Remember: You are their trusted financial advisor with full visibility into their finances. Provide personalized, data-driven advice.`
 

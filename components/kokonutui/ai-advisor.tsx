@@ -10,6 +10,7 @@ import { useRef, useEffect, useState } from "react"
 import { usePortfolio } from "@/lib/portfolio-context"
 import { loadSettingsSnapshot } from "@/lib/settings-store"
 import { getTradingOverview } from "@/lib/trading-client"
+import { loadStockIntelligenceContext, type StockIntelligenceContext } from "@/lib/stock-analysis-client"
 import {
   defaultGrowthToolkitData,
   loadGrowthToolkitSnapshot,
@@ -27,7 +28,11 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
   const [uiLocale, setUiLocale] = useState<"fr" | "en">("fr")
   const [growthToolkit, setGrowthToolkit] = useState<GrowthToolkitData>(defaultGrowthToolkitData)
   const [tradingOverview, setTradingOverview] = useState<PaperTradingOverview | null>(null)
+  const [stockIntelligence, setStockIntelligence] = useState<StockIntelligenceContext>(() =>
+    loadStockIntelligenceContext("fr")
+  )
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const lastProactiveRef = useRef<string | null>(null)
   const modelLabel = process.env.NEXT_PUBLIC_OPENAI_MODEL_LABEL || "GPT-5.3-Codex"
   const { accounts, transactions, goals, totalBalance, stockActions } = usePortfolio()
 
@@ -82,6 +87,18 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
     }
   }, [])
 
+  useEffect(() => {
+    const syncStockIntelligence = () => {
+      setStockIntelligence(loadStockIntelligenceContext(uiLocale))
+    }
+
+    syncStockIntelligence()
+    const intervalId = window.setInterval(syncStockIntelligence, 5_000)
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [uiLocale, stockActions])
+
   const { messages, sendMessage, status, setMessages } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
@@ -99,12 +116,44 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
           uiLocale,
           growthToolkit,
           tradingOverview,
+          stockIntelligence,
         },
       }),
     }),
   })
 
   const isLoading = status === "streaming" || status === "submitted"
+
+  useEffect(() => {
+    const recent = stockIntelligence.alerts.recentTriggered[0]
+    if (!recent) return
+
+    const digestKey = `${recent.id}-${recent.triggeredAt ?? recent.message}`
+    if (lastProactiveRef.current === digestKey) return
+
+    const text =
+      uiLocale === "en"
+        ? `Proactive alert: ${recent.symbol} (${recent.severity}). ${recent.message}`
+        : `Alerte proactive: ${recent.symbol} (${recent.severity}). ${recent.message}`
+
+    setMessages((current) => {
+      const exists = current.some((message) =>
+        message.parts?.some((part) => part.type === "text" && "text" in part && part.text === text)
+      )
+      if (exists) return current
+
+      return [
+        ...current,
+        {
+          id: `proactive-${digestKey}`,
+          role: "assistant",
+          parts: [{ type: "text", text }],
+        },
+      ]
+    })
+
+    lastProactiveRef.current = digestKey
+  }, [setMessages, stockIntelligence.alerts.recentTriggered, uiLocale])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -140,6 +189,7 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
             "How should I pay off my debt?",
             "Analyze my spending patterns",
             "Should I place a buy order now?",
+            "Analyze AAPL and suggest entry/exit levels",
           ],
         }
       : {
@@ -155,6 +205,7 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
             "Quelle stratégie pour rembourser mes dettes ?",
             "Analyse mes dépenses récentes",
             "Dois-je passer un ordre d'achat maintenant ?",
+            "Analyse AAPL et propose mes niveaux d'entree/sortie",
           ],
         }
 

@@ -7,6 +7,7 @@ import {
   Wallet,
   Bot,
   CandlestickChart,
+  ShieldAlert,
   TrendingUp,
   PieChart,
   PiggyBank,
@@ -29,6 +30,8 @@ import Integrations from "./integrations"
 import SmartFinanceTools from "./smart-finance-tools"
 import PortfolioGrowthStudio from "./portfolio-growth-studio"
 import AiTradingDesk from "./ai-trading-desk"
+import { StockAnalysisPanel } from "./stock-analysis-panel"
+import { StockAlertsWidget } from "./stock-alerts-widget"
 import { PortfolioProvider } from "@/lib/portfolio-context"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -44,6 +47,8 @@ export default function Content() {
       rebalancing: "portfolio",
       "growth-studio": "portfolio",
       "trading-desk": "portfolio",
+      "stock-intelligence": "portfolio",
+      "stock-alerts": "portfolio",
       "budget-cashflow": "budget",
       "monthly-budget": "budget",
       "planning-scenarios": "budget",
@@ -234,6 +239,30 @@ export default function Content() {
               </h2>
             </div>
             <AiTradingDesk className="w-full" />
+          </section>
+
+          <section id="stock-intelligence" className="space-y-3 scroll-mt-24">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl border border-border/60 bg-primary/10">
+                <TrendingUp className="w-4 h-4 text-primary" />
+              </div>
+              <h2 className="text-sm font-semibold tracking-tight text-foreground">
+                Stock Intelligence IA
+              </h2>
+            </div>
+            <StockAnalysisPanel className="w-full" />
+          </section>
+
+          <section id="stock-alerts" className="space-y-3 scroll-mt-24">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl border border-border/60 bg-primary/10">
+                <ShieldAlert className="w-4 h-4 text-primary" />
+              </div>
+              <h2 className="text-sm font-semibold tracking-tight text-foreground">
+                Alertes intelligentes actions
+              </h2>
+            </div>
+            <StockAlertsWidget className="w-full" maxAlerts={6} />
           </section>
         </TabsContent>
 
