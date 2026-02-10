@@ -6,11 +6,12 @@ import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { cn } from "@/lib/utils"
 import { Bot, Send, User, Sparkles, RefreshCw, ChevronDown, ChevronUp } from "lucide-react"
-import { useRef, useEffect, useState } from "react"
+import { useRef, useEffect, useMemo, useState } from "react"
 import { usePortfolio } from "@/lib/portfolio-context"
 import { loadSettingsSnapshot } from "@/lib/settings-store"
 import { getTradingOverview } from "@/lib/trading-client"
 import { loadStockIntelligenceContext, type StockIntelligenceContext } from "@/lib/stock-analysis-client"
+import { buildAiFinanceIntelligenceContext } from "@/lib/ai-finance-intelligence"
 import {
   defaultGrowthToolkitData,
   loadGrowthToolkitSnapshot,
@@ -33,8 +34,22 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
   )
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const lastProactiveRef = useRef<string | null>(null)
+  const lastPriorityDigestRef = useRef<string | null>(null)
   const modelLabel = process.env.NEXT_PUBLIC_OPENAI_MODEL_LABEL || "GPT-5.3-Codex"
   const { accounts, transactions, goals, totalBalance, stockActions } = usePortfolio()
+  const aiFinanceIntelligence = useMemo(
+    () =>
+      buildAiFinanceIntelligenceContext({
+        accounts,
+        transactions,
+        goals,
+        stockActions,
+        growthToolkit,
+        tradingOverview,
+        stockIntelligence,
+      }),
+    [accounts, goals, growthToolkit, stockActions, stockIntelligence, tradingOverview, transactions]
+  )
 
   useEffect(() => {
     const syncLocale = () => {
@@ -117,6 +132,7 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
           growthToolkit,
           tradingOverview,
           stockIntelligence,
+          aiFinanceIntelligence,
         },
       }),
     }),
@@ -155,6 +171,40 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
     lastProactiveRef.current = digestKey
   }, [setMessages, stockIntelligence.alerts.recentTriggered, uiLocale])
 
+  useEffect(() => {
+    const urgent = aiFinanceIntelligence.priorities
+      .filter((item) => item.severity === "critical" || item.severity === "high")
+      .slice(0, 3)
+
+    if (urgent.length === 0) return
+
+    const digestKey = urgent.map((item) => `${item.id}:${item.metricValue}`).join("|")
+    if (lastPriorityDigestRef.current === digestKey) return
+
+    const text =
+      uiLocale === "en"
+        ? `Proactive plan: ${urgent.map((item, index) => `${index + 1}) ${item.title} (${item.metricLabel}: ${item.metricValue})`).join(" | ")}`
+        : `Plan proactif: ${urgent.map((item, index) => `${index + 1}) ${item.title} (${item.metricLabel} : ${item.metricValue})`).join(" | ")}`
+
+    setMessages((current) => {
+      const exists = current.some((message) =>
+        message.parts?.some((part) => part.type === "text" && "text" in part && part.text === text)
+      )
+      if (exists) return current
+
+      return [
+        ...current,
+        {
+          id: `priority-${digestKey}`,
+          role: "assistant",
+          parts: [{ type: "text", text }],
+        },
+      ]
+    })
+
+    lastPriorityDigestRef.current = digestKey
+  }, [aiFinanceIntelligence.priorities, setMessages, uiLocale])
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
@@ -178,7 +228,7 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
     uiLocale === "en"
       ? {
           title: "AI Financial Advisor",
-          subtitle: "Global control, instant insights, and guided execution.",
+          subtitle: "Global control, context-rich analysis, and guided execution.",
           clearTitle: "Clear chat",
           emptyTitle: "I monitor your finances and operations.",
           emptyDesc: "I can use your full portfolio data to guide your next actions.",
@@ -194,7 +244,7 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
         }
       : {
           title: "Conseiller Financier IA",
-          subtitle: "Pilotage global, insights instantanés et exécution guidée.",
+          subtitle: "Pilotage global, contexte enrichi et exécution guidée.",
           clearTitle: "Vider la conversation",
           emptyTitle: "Je supervise vos finances et vos opérations.",
           emptyDesc: "J’utilise vos données de portefeuille pour guider vos décisions.",
@@ -271,6 +321,50 @@ export default function AIAdvisor({ className }: AIAdvisorProps) {
 
       {isExpanded && (
         <>
+          <div className="px-4 pt-3">
+            <div className="rounded-lg border border-border/60 bg-background/60 p-3 text-xs">
+              <div className="mb-2 grid grid-cols-3 gap-2">
+                <div className="rounded-md border border-border/60 bg-background/60 p-2">
+                  <p className="text-muted-foreground">Health</p>
+                  <p className="font-semibold text-foreground">
+                    {aiFinanceIntelligence.scores.financialHealth.toFixed(0)}/100
+                  </p>
+                </div>
+                <div className="rounded-md border border-border/60 bg-background/60 p-2">
+                  <p className="text-muted-foreground">Risk</p>
+                  <p className="font-semibold text-foreground">
+                    {aiFinanceIntelligence.scores.riskControl.toFixed(0)}/100
+                  </p>
+                </div>
+                <div className="rounded-md border border-border/60 bg-background/60 p-2">
+                  <p className="text-muted-foreground">Execution</p>
+                  <p className="font-semibold text-foreground">
+                    {aiFinanceIntelligence.scores.executionConsistency.toFixed(0)}/100
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-1">
+                {aiFinanceIntelligence.priorities.slice(0, 2).map((item) => (
+                  <p key={item.id} className="text-muted-foreground">
+                    <span
+                      className={cn(
+                        "mr-1 font-semibold",
+                        item.severity === "critical"
+                          ? "text-rose-600"
+                          : item.severity === "high"
+                            ? "text-amber-600"
+                            : "text-foreground"
+                      )}
+                    >
+                      {item.severity.toUpperCase()}
+                    </span>
+                    {item.title} - {item.metricLabel}: {item.metricValue}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[300px] max-h-[400px]">
             {messages.length === 0 ? (

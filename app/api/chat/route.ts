@@ -244,6 +244,46 @@ const stockIntelligenceSchema = z.object({
   }),
 })
 
+const aiFinancePrioritySchema = z.object({
+  id: z.string().min(1).max(120),
+  title: z.string().min(1).max(200),
+  reason: z.string().min(1).max(600),
+  severity: z.enum(["critical", "high", "medium", "low"]),
+  metricLabel: z.string().min(1).max(120),
+  metricValue: z.string().min(1).max(120),
+  nextAction: z.string().min(1).max(600),
+})
+
+const aiFinanceIntelligenceSchema = z.object({
+  version: z.literal(1),
+  generatedAt: z.string().datetime({ offset: true }),
+  scores: z.object({
+    financialHealth: z.number().min(0).max(100),
+    riskControl: z.number().min(0).max(100),
+    executionConsistency: z.number().min(0).max(100),
+  }),
+  metrics: z.object({
+    netWorthUsd: z.number(),
+    cashUsd: z.number(),
+    debtUsd: z.number(),
+    monthlyIncomeUsd: z.number(),
+    monthlyExpenseUsd: z.number(),
+    monthlyNetUsd: z.number(),
+    savingsRatePct: z.number(),
+    debtToCashRatio: z.number().min(0),
+    emergencyFundMonths: z.number().min(0),
+    portfolioConcentrationPct: z.number().min(0).max(100),
+    activeTradingPositions: z.number().int().nonnegative(),
+    realizedTradingPnlUsd: z.number(),
+    stockAlertsActive: z.number().int().nonnegative(),
+    stockAlertsCritical: z.number().int().nonnegative(),
+    goalsCompletionPct: z.number().min(0).max(100),
+  }),
+  priorities: z.array(aiFinancePrioritySchema).max(12),
+  opportunities: z.array(z.string().min(1).max(600)).max(12),
+  constraints: z.array(z.string().min(1).max(600)).max(12),
+})
+
 const messageSchema = z
   .object({
     id: z.string().min(1).max(100).optional(),
@@ -274,6 +314,7 @@ const requestSchema = z
     growthToolkit: growthToolkitSchema.optional(),
     tradingOverview: tradingOverviewSchema.optional(),
     stockIntelligence: stockIntelligenceSchema.optional(),
+    aiFinanceIntelligence: aiFinanceIntelligenceSchema.optional(),
   })
   .strict()
 
@@ -436,7 +477,15 @@ export async function POST(req: Request) {
     )
   }
 
-  const { messages, portfolioData, uiLocale, growthToolkit, tradingOverview, stockIntelligence } = parsedPayload.data
+  const {
+    messages,
+    portfolioData,
+    uiLocale,
+    growthToolkit,
+    tradingOverview,
+    stockIntelligence,
+    aiFinanceIntelligence,
+  } = parsedPayload.data
   const portfolio: PortfolioData = portfolioData || DEFAULT_PORTFOLIO
   const summary = calculateSummary(portfolio.accounts)
   const preferredLanguage = uiLocale === "en" ? "English" : "French"
@@ -454,6 +503,9 @@ export async function POST(req: Request) {
   const stockIntelligenceSection = stockIntelligence
     ? `\n### Stock Intelligence:\n- Summary:\n${stockIntelligence.summary}\n- Stats: invested ${stockIntelligence.registry.stats.totalInvested.toFixed(2)}, realizedPnL ${stockIntelligence.registry.stats.totalRealizedGainLoss.toFixed(2)}, realizedReturn ${stockIntelligence.registry.stats.totalRealizedReturnPct.toFixed(2)}%, active ${stockIntelligence.registry.stats.activePositions}, closed ${stockIntelligence.registry.stats.closedPositions}, winRate ${stockIntelligence.registry.stats.winRate.toFixed(1)}%\n- Active positions:\n${stockIntelligence.registry.activePositions.slice(0, 8).map((position) => `  - ${position.symbol} ${position.side.toUpperCase()} ${position.shares} @ ${position.entryPrice.toFixed(2)}, signal ${position.signal}, confidence ${position.confidence.toFixed(0)}%, risk ${position.riskScore.toFixed(0)}, target ${position.targetPrice.toFixed(2)}, stop ${position.stopLoss?.toFixed(2) ?? "n/a"}`).join("\n") || "  - No active analyzed position"}\n- Recent analyses:\n${stockIntelligence.registry.recentAnalyses.slice(0, 8).map((item) => `  - ${item.symbol} ${item.signal} (${item.confidence.toFixed(0)}%) status ${item.status}, expected ${item.potentialReturn.toFixed(2)}%`).join("\n") || "  - No recent stock analysis"}\n- Alerts: active ${stockIntelligence.alerts.activeCount}, critical ${stockIntelligence.alerts.criticalCount}, warning ${stockIntelligence.alerts.warningCount}\n- Recent triggered alerts:\n${stockIntelligence.alerts.recentTriggered.slice(0, 8).map((alert) => `  - ${alert.symbol} ${alert.severity.toUpperCase()}: ${alert.message}`).join("\n") || "  - No recently triggered alert"}\n`
     : "\n### Stock Intelligence:\nNo stock intelligence context provided.\n"
+  const aiFinanceIntelligenceSection = aiFinanceIntelligence
+    ? `\n### AI Finance Intelligence Layer:\n- Generated at: ${aiFinanceIntelligence.generatedAt}\n- Scores: financial health ${aiFinanceIntelligence.scores.financialHealth.toFixed(1)}/100, risk control ${aiFinanceIntelligence.scores.riskControl.toFixed(1)}/100, execution consistency ${aiFinanceIntelligence.scores.executionConsistency.toFixed(1)}/100\n- Core metrics: net worth ${aiFinanceIntelligence.metrics.netWorthUsd.toFixed(2)}, cash ${aiFinanceIntelligence.metrics.cashUsd.toFixed(2)}, debt ${aiFinanceIntelligence.metrics.debtUsd.toFixed(2)}, monthly net ${aiFinanceIntelligence.metrics.monthlyNetUsd.toFixed(2)}, savings rate ${aiFinanceIntelligence.metrics.savingsRatePct.toFixed(2)}%, emergency fund ${aiFinanceIntelligence.metrics.emergencyFundMonths.toFixed(2)} months, concentration ${aiFinanceIntelligence.metrics.portfolioConcentrationPct.toFixed(2)}%, critical alerts ${aiFinanceIntelligence.metrics.stockAlertsCritical}\n- Ranked priorities:\n${aiFinanceIntelligence.priorities.map((item) => `  - [${item.severity.toUpperCase()}] ${item.title} | ${item.metricLabel}: ${item.metricValue} | Why: ${item.reason} | Next: ${item.nextAction}`).join("\n") || "  - No active priority"}\n- Opportunities:\n${aiFinanceIntelligence.opportunities.map((item) => `  - ${item}`).join("\n") || "  - No identified opportunity"}\n- Constraints:\n${aiFinanceIntelligence.constraints.map((item) => `  - ${item}`).join("\n") || "  - No explicit constraint"}\n`
+    : "\n### AI Finance Intelligence Layer:\nNo consolidated intelligence context provided.\n"
 
   const systemPrompt = `You are an expert financial advisor AI agent integrated into the user's financial dashboard. You have access to their complete financial portfolio data and can provide personalized investment advice and proactive guidance.
 
@@ -482,6 +534,7 @@ ${portfolio.stockActions.map((a: StockAction) => `- ${a.symbol} ${a.action.toUpp
 ${growthToolkitSection}
 ${tradingOverviewSection}
 ${stockIntelligenceSection}
+${aiFinanceIntelligenceSection}
 
 ## Your Role:
 1. Analyze the user's portfolio and provide personalized investment advice
@@ -508,6 +561,7 @@ ${stockIntelligenceSection}
 - If suggesting trades, include sizing rationale and risk controls from the paper trading policy
 - Do not imply real brokerage execution; this environment uses paper trading simulation
 - Always use the stock intelligence context (signals, RSI/MACD, registry performance, alerts) when giving equity advice
+- Use AI Finance Intelligence priorities as the default execution queue and explain which priority each recommendation addresses
 - Proactively surface one to three high-impact actions when critical or warning alerts exist
 
 Remember: You are their trusted financial advisor with full visibility into their finances. Provide personalized, data-driven advice.`
