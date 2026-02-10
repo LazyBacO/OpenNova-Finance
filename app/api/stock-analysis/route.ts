@@ -13,6 +13,7 @@ import {
   type StockAnalysisReport,
   type StockPrice,
 } from "@/lib/stock-analysis-engine"
+import { fetchMassiveAnalysisContext } from "@/lib/massive-market-data"
 
 const analyzeStockRequestSchema = z.object({
   symbol: z.string().min(1).max(10),
@@ -39,44 +40,59 @@ const analyzeStockRequestSchema = z.object({
 
 const localeSchema = z.enum(["fr", "en"]).default("fr")
 
-const toPricePayload = (
+const toPricePayload = async (
   symbol: string,
   data: z.infer<typeof analyzeStockRequestSchema>
-): { prices: StockPrice; fundamentals: FundamentalMetrics; priceHistory: number[] } => {
+): Promise<{
+  prices: StockPrice
+  fundamentals: FundamentalMetrics
+  priceHistory: number[]
+  dataSource: "massive-live" | "massive-delayed" | "synthetic"
+}> => {
   const synthetic = generateSyntheticMarketSnapshot(symbol, data.currentPrice)
-  const current = data.currentPrice ?? synthetic.currentPrice
-  const high52week = data.high52week ?? synthetic.high52week
-  const low52week = data.low52week ?? synthetic.low52week
+  const liveContext = await fetchMassiveAnalysisContext(symbol)
+
+  const current = data.currentPrice ?? liveContext?.currentPrice ?? synthetic.currentPrice
+  const high52week = data.high52week ?? liveContext?.high52week ?? synthetic.high52week
+  const low52week = data.low52week ?? liveContext?.low52week ?? synthetic.low52week
+  const liveFundamentals = liveContext?.fundamentals
 
   const prices: StockPrice = {
     symbol,
     current,
     high52week: Math.max(high52week, current),
     low52week: Math.min(low52week, current),
-    avgVolume: data.avgVolume ?? synthetic.avgVolume,
-    marketCap: data.marketCap ?? synthetic.marketCap,
-    pe: data.pe ?? synthetic.pe,
+    avgVolume: data.avgVolume ?? liveContext?.avgVolume ?? synthetic.avgVolume,
+    marketCap: data.marketCap ?? liveContext?.marketCap ?? synthetic.marketCap,
+    pe: data.pe ?? liveFundamentals?.pe ?? synthetic.pe,
     dividend: data.dividend ?? synthetic.dividend,
     beta: data.beta ?? synthetic.beta,
   }
 
   const fundamentals: FundamentalMetrics = {
-    pe: data.pe ?? synthetic.pe,
-    pb: data.pb ?? synthetic.pb,
-    ps: data.ps ?? synthetic.ps,
-    debt: data.debt ?? synthetic.debt,
-    roe: data.roe ?? synthetic.roe,
-    roic: data.roic ?? synthetic.roic,
-    fcf: data.fcf ?? synthetic.fcf,
-    growthRate: data.growthRate ?? synthetic.growthRate,
+    pe: data.pe ?? liveFundamentals?.pe ?? synthetic.pe,
+    pb: data.pb ?? liveFundamentals?.pb ?? synthetic.pb,
+    ps: data.ps ?? liveFundamentals?.ps ?? synthetic.ps,
+    debt: data.debt ?? liveFundamentals?.debt ?? synthetic.debt,
+    roe: data.roe ?? liveFundamentals?.roe ?? synthetic.roe,
+    roic: data.roic ?? liveFundamentals?.roic ?? synthetic.roic,
+    fcf: data.fcf ?? liveFundamentals?.fcf ?? synthetic.fcf,
+    growthRate: data.growthRate ?? liveFundamentals?.growthRate ?? synthetic.growthRate,
   }
 
   const priceHistory =
     data.priceHistory && data.priceHistory.length >= 30
       ? data.priceHistory
-      : generateSyntheticPriceHistory(symbol, current, 260)
+      : liveContext?.priceHistory && liveContext.priceHistory.length >= 30
+        ? liveContext.priceHistory
+        : generateSyntheticPriceHistory(symbol, current, 260)
 
-  return { prices, fundamentals, priceHistory }
+  return {
+    prices,
+    fundamentals,
+    priceHistory,
+    dataSource: liveContext ? (liveContext.status === "delayed" ? "massive-delayed" : "massive-live") : "synthetic",
+  }
 }
 
 const buildProactiveSignals = (
@@ -134,7 +150,7 @@ export const POST = async (request: Request) => {
   }
 
   const symbol = parsed.data.symbol.trim().toUpperCase()
-  const { prices, fundamentals, priceHistory } = toPricePayload(symbol, parsed.data)
+  const { prices, fundamentals, priceHistory, dataSource } = await toPricePayload(symbol, parsed.data)
   const technical = calculateTechnicalIndicators(priceHistory, prices.current)
   const recommendation = analyzeStock(symbol, prices, technical, fundamentals)
 
@@ -183,6 +199,7 @@ export const POST = async (request: Request) => {
       report,
       recommendation,
       summary,
+      dataSource,
       proactiveSignals,
       actionableInsights,
       entryId: entry?.id,

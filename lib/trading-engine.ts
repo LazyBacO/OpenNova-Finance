@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto"
+import { getCachedMassiveQuote } from "@/lib/massive-market-data"
 import { buildTradingRiskSnapshot, isRiskIncreasingOrder } from "@/lib/trading-risk"
 import {
   paperOrderSchema,
@@ -40,11 +41,15 @@ export const normalizeSymbol = (symbol: string) => symbol.trim().toUpperCase()
 
 export const getPaperQuote = (symbolInput: string): PaperQuote => {
   const symbol = normalizeSymbol(symbolInput)
-  const base = BASE_QUOTES_CENTS[symbol] ?? (500 + (hashSymbol(symbol) % 200000))
+  const cachedMassive = getCachedMassiveQuote(symbol)
+  const base = cachedMassive ?? BASE_QUOTES_CENTS[symbol] ?? (500 + (hashSymbol(symbol) % 200000))
   const now = new Date()
   const minuteBucket = Math.floor(now.getTime() / 60_000)
   const microDrift = ((hashSymbol(`${symbol}-${minuteBucket}`) % 300) - 150) / 10_000
-  const priceCents = Math.max(1, Math.round(base * (1 + microDrift)))
+  const priceCents =
+    cachedMassive !== null
+      ? Math.max(1, Math.round(base))
+      : Math.max(1, Math.round(base * (1 + microDrift)))
 
   return {
     symbol,

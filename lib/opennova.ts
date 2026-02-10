@@ -67,6 +67,16 @@ export {
   isRiskIncreasingOrder,
 } from "@/lib/trading-risk"
 
+// Massive Market Data (Polygon)
+export {
+  fetchMassiveAnalysisContext,
+  getCachedMassiveQuote,
+  prefetchMassiveQuotes,
+  isMassiveLiveModeEnabled,
+  type MassiveAnalysisContext,
+  type MassiveMarketStatus,
+} from "@/lib/massive-market-data"
+
 // Client Helpers
 export {
   analyzeStock as clientAnalyzeStock,

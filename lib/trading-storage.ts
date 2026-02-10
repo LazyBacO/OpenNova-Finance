@@ -1,5 +1,6 @@
 import { promises as fs } from "fs"
 import path from "path"
+import { prefetchMassiveQuotes } from "@/lib/massive-market-data"
 import { buildTradingRiskSnapshot } from "@/lib/trading-risk"
 import {
   buildAccountSummary,
@@ -166,6 +167,10 @@ export const writeTradingStore = async (store: PaperTradingStore) => {
 
 export const getTradingOverview = async (): Promise<PaperTradingOverview> => {
   const store = await readTradingStore()
+  const symbols = store.positions.map((position) => position.symbol)
+  await prefetchMassiveQuotes(symbols).catch(() => {
+    // fallback is handled in trading-engine
+  })
   const positions = store.positions
     .map((position) => computePositionWithMarket(position))
     .sort((a, b) => Math.abs(b.marketValueCents) - Math.abs(a.marketValueCents))
@@ -192,6 +197,9 @@ export const placeTradingOrder = async (
 ) => {
   const parsed = paperOrderInputSchema.parse(input)
   const store = await readTradingStore()
+  await prefetchMassiveQuotes([parsed.symbol]).catch(() => {
+    // fallback is handled in trading-engine
+  })
   const idempotencyKey = options?.idempotencyKey?.trim()
 
   if (idempotencyKey) {
@@ -269,6 +277,9 @@ export const getTradingQuotes = async (symbols: string[]) => {
   if (cleanSymbols.length === 0) {
     return []
   }
+  await prefetchMassiveQuotes(cleanSymbols).catch(() => {
+    // fallback is handled in trading-engine
+  })
 
   const quotes = cleanSymbols.length === 1 ? [getPaperQuote(cleanSymbols[0])] : getPaperQuotes(cleanSymbols)
   return quotes
