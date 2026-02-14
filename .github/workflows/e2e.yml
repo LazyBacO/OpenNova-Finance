@@ -12,35 +12,41 @@ jobs:
   e2e:
     name: E2E
     runs-on: ubuntu-latest
-    needs: [lint, test]
+
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+
       - name: Install
         run: npm ci
+
       - name: Configure mocks (if available)
-        run: |
-          echo "Using mocks for external services where possible"
+        run: echo "Using mocks for external services where possible"
+
       - name: Run Playwright tests
         run: npm run test:e2e --if-present
-      - name: Archive E2E results (on failure)
+
+      - name: Upload Playwright report (on failure)
         if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: playwright-report
-          path: ./playwright-report || true
-      - name: Upload test results
+          path: ./playwright-report
+
+      - name: Upload test results (on failure)
         if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: e2e-test-results
-          path: test-results.xml || true
+          path: test-results.xml
+
       - name: Upload screenshots (on failure)
         if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: e2e-screenshots
-          path: ./screenshots || true
+          path: ./screenshots
