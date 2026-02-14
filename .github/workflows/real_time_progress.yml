@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Collect workflow statuses
@@ -80,13 +80,16 @@ jobs:
         run: |
           node -e "const fs=require('fs'); const path='docs/history/history.json'; const current=fs.existsSync(path)?JSON.parse(fs.readFileSync(path,'utf8')):[]; current.push({date:new Date().toISOString(),ci:process.env.CI_STATUS||'unknown',e2e:process.env.E2E_STATUS||'unknown'}); fs.writeFileSync(path, JSON.stringify(current.slice(-200), null, 2)+'\n');"
 
-      - name: Commit history updates
+      - name: Update AC table
+        run: node .github/scripts/update_ac_table.js
+
+      - name: Commit updates
         if: github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/history/history.json progress_summary.txt
-          git diff --cached --quiet || git commit -m "chore(ci): update QA history and progress summary"
+          git add docs/history/history.json progress_summary.txt docs/acceptance_criteria.md
+          git diff --cached --quiet || git commit -m "chore(ci): update QA history, progress summary and AC table"
           git push
 
       - name: Comment progress on issue
