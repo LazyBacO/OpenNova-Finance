@@ -5,7 +5,7 @@
 <!-- AC_STATUS_START -->
 
 | AC | Description | Statut | Notes |
-|----|--------|--------|--------|
+|----|--------------|--------|--------|
 | AC-01 | Page principale charge | PASS | |
 | AC-02 | API répond | PASS | |
 | AC-03 | CI passe | PASS | |
