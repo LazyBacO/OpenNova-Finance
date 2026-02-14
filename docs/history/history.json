@@ -143,5 +143,30 @@
     "date": "2026-02-14T19:54:59.499Z",
     "ci": "success",
     "e2e": "success"
+  },
+  {
+    "date": "2026-02-14T20:28:32.522Z",
+    "ci": "success",
+    "e2e": "success"
+  },
+  {
+    "date": "2026-02-14T20:53:16.428Z",
+    "ci": "failure",
+    "e2e": "success"
+  },
+  {
+    "date": "2026-02-14T21:26:31.650Z",
+    "ci": "failure",
+    "e2e": "success"
+  },
+  {
+    "date": "2026-02-14T21:49:11.731Z",
+    "ci": "failure",
+    "e2e": "success"
+  },
+  {
+    "date": "2026-02-14T22:00:39.436Z",
+    "ci": "failure",
+    "e2e": "success"
   }
 ]

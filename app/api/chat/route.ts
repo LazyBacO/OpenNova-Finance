@@ -351,23 +351,6 @@ function jsonResponse(payload: unknown, status: number, headers?: HeadersInit) {
   })
 }
 
-function createRateLimitHeaders(rateLimit: {
-  remaining: number
-  resetAt: number
-  retryAfterSeconds: number
-}) {
-  return {
-    "X-RateLimit-Limit": String(rateLimitMaxRequests),
-    "X-RateLimit-Remaining": String(rateLimit.remaining),
-    "X-RateLimit-Reset": String(rateLimit.resetAt),
-    "Cache-Control": "no-store",
-    Vary: "Forwarded, X-Forwarded-For, X-Real-IP, CF-Connecting-IP, X-Client-IP, User-Agent",
-    ...(rateLimit.retryAfterSeconds > 0
-      ? { "Retry-After": String(rateLimit.retryAfterSeconds) }
-      : {}),
-  }
-}
-
 function calculateSummary(accounts: AccountItem[]) {
   const totalSavings = centsToDollars(
     accounts
@@ -419,7 +402,12 @@ export async function POST(req: Request) {
     return jsonResponse(
       { error: "Too many AI requests. Please retry shortly." },
       429,
-      createRateLimitHeaders(rateLimit)
+      {
+        "Retry-After": String(rateLimit.retryAfterSeconds),
+        "X-RateLimit-Limit": String(rateLimitMaxRequests),
+        "X-RateLimit-Remaining": String(rateLimit.remaining),
+        "X-RateLimit-Reset": String(rateLimit.resetAt),
+      }
     )
   }
 
@@ -566,3 +554,4 @@ Remember: You are their trusted financial advisor with full visibility into thei
     )
   }
 }
+
