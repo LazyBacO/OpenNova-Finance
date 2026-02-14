@@ -2,11 +2,9 @@ name: E2E
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   e2e:
@@ -14,15 +12,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: "18"
 
-      - name: Install
-        run: npm ci
+      - name: Install dependencies
+        run: npm install
 
       - name: Configure mocks (if available)
         run: echo "Using mocks for external services where possible"
@@ -42,11 +41,16 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: e2e-test-results
-          path: test-results.xml
+          path: |
+            test-results
+            test-results.xml
+            junit.xml
 
       - name: Upload screenshots (on failure)
         if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: e2e-screenshots
-          path: ./screenshots
+          path: |
+            screenshots
+            test-results
